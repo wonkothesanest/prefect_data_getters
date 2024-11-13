@@ -1,0 +1,11 @@
+[Unit]
+Description=Prefect Server
+After=network.target
+
+[Service]
+ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect server 
+Restart=always
+User=dusty
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+prefect
+pick
+langchain
+elasticsearch
