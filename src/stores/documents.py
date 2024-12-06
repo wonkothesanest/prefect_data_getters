@@ -3,6 +3,7 @@ from langchain_core.documents import Document
 from datetime import datetime
 from typing import Literal
 from utilities.constants import VECTOR_STORE_NAMES  
+import uuid
 
 
 class _AIDocument:
@@ -11,6 +12,11 @@ class _AIDocument:
         self._type_name = None
         self.id = self._document.id
         self.page_content = self._document.page_content
+    
+    def set_page_content(self, content: str) -> None:
+        self._document.page_content = content
+        self.page_content = content
+
 
     def _get_metadata(self, key, default=None):
         """Safely get a metadata value by key, returning `default` if it doesn't exist."""
@@ -57,6 +63,7 @@ class JiraDocument(_AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Jira Document"
+        self.id = self._get_metadata("key")
 
     def __str__(self):
         s = f"""
@@ -84,6 +91,7 @@ class EmailDocument(_AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Email Document"
+        self.id = self._get_metadata("message-id")
 
     def __str__(self):
         s = f"""
@@ -109,6 +117,7 @@ class SlackMessageDocument(_AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Slack Message Document"
+        self.id = f"{self._get_metadata("channel")}_{self._get_metadata("ts")}"
 
     def __str__(self):
         timestamp = self._get_metadata("ts")
@@ -162,6 +171,8 @@ class SlabChunkDocument(SlabDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Slab Chunk Document"
+        #TODO: using a guid for now but this will not allow us to get the original document from ES.
+        self.id = str(uuid.uuid1())
 
     def __str__(self):
         s = f"""

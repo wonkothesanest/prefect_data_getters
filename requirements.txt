@@ -2,3 +2,8 @@ prefect
 pick
 langchain
 elasticsearch
+elasticsearch_dsl
+
+pip install git+https://github.com/openai/whisper.git
+
+

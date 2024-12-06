@@ -8,6 +8,9 @@ SCRATCH_BASE_DIR = "/home/dusty/workspace/omnidian/scratch"
 MBOX_FILE_PATH = '/home/dusty/.thunderbird/NGBackups/ojl5cbdd.default-release-20241104-1126/ImapMail/imap.gmail.com/ME' 
 #TODO: Change this to be dynamic, for now this is a manual process.
 SLAB_BACKUP_DIR = "/media/dusty/TB2/workspace/dusty/langchain-example/data/slab_docs/data"
+
+DESIRED_DOCUMENT_CHARACTER_LENGTH = 5000
+
 ES_URL = "http://localhost:9200"
 data_stores = [
     {

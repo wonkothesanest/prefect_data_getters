@@ -7,5 +7,9 @@ ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefe
 Restart=always
 User=dusty
 
+RestartSec=3
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
 [Install]
 WantedBy=multi-user.target

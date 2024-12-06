@@ -7,6 +7,7 @@ from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 from typing import Annotated, List, Dict
 from stores.vectorstore import get_embeddings, get_slab, get_slack
+from langgraph.checkpoint.memory import MemorySaver
 from langchain_ollama import ChatOllama
 from langchain_core.documents.base import Document
 import json
@@ -131,9 +132,12 @@ workflow.add_edge("KeyTermAgent", "RetrievalAgent")
 workflow.add_edge("RetrievalAgent", "EvaluationAgent")
 workflow.add_edge("EvaluationAgent", "AnswerAgent")
 workflow.add_edge("AnswerAgent", END)
+workflow.add_conditional_edges
 
+
+checkpointer = MemorySaver()
 # Compile the graph
-graph = workflow.compile()
+graph = workflow.compile(checkpointer=checkpointer)
 
 # Run the system with a sample prompt
 prompt = "What projects are we working on for everbright?"

@@ -9,14 +9,14 @@ date_formats = [
     "%b %d, %Y %I:%M %p",                # Month day, year with AM/PM
 ]
 
-def parse_date(date_str):
+def parse_date(date_str)->str:
     try:
-        return datetime.fromisoformat(date_str)
+        return datetime.fromisoformat(date_str).isoformat()
     except:
         pass
     for fmt in date_formats:
         try:
-            return datetime.strptime(date_str, fmt)
+            return datetime.strptime(date_str, fmt).isoformat()
         except ValueError:
             continue
     raise ValueError("Date format not recognized")

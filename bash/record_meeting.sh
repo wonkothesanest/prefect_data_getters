@@ -22,6 +22,13 @@ fi
 
 # Record audio from the virtual sink monitor with a timestamped filename
 OUTPUT_FILE="call_recording_$(date +%Y%m%d_%H%M%S).wav"
-ffmpeg -f pulse -i combined.monitor -ac 2 -ar 44100 -y "$OUTPUT_FILE"
 
-echo "Recording saved to $OUTPUT_FILE"
+# Run ffmpeg with a 1.5 hour timeout (5400 seconds)
+timeout 5400 ffmpeg -f pulse -i combined.monitor -ac 2 -ar 44100 -y "$OUTPUT_FILE"
+
+# Check if ffmpeg command was terminated due to timeout
+if [ $? -eq 124 ]; then
+    echo "Recording was terminated due to timeout."
+else
+    echo "Recording saved to $OUTPUT_FILE"
+fi

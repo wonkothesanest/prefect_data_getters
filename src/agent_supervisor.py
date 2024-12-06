@@ -7,6 +7,7 @@ from stores.vectorstore import ESVectorStore
 from utilities.constants import data_stores
 from langchain.schema import Document
 from langchain_core.tools import tool
+from langchain_core.output_parsers.json import JsonOutputParser
 from langchain.chains.llm import LLMChain
 from langchain_ollama.llms import OllamaLLM
 # from langchain_ollama.chat_models import ChatOllama
@@ -40,9 +41,9 @@ class MyCallback(StdOutCallbackHandler):
 
 handler = MyCallback()
 
-#llm = ChatOllama(model="llama3.1", format='json', callbacks=[handler])
+json_llm = ChatOllama(model="llama3.1", format="json", callbacks=[handler])
+llm = ChatOllama(model="llama3.1")
 
-llm = ChatOpenAI(model="gpt-4o")
 searcher = MultiSourceSearcher()
 
 class MyCallback(StdOutCallbackHandler):
@@ -62,17 +63,17 @@ def agent_node(state, agent, name):
 
 
 members = ["Researcher", "Reviewer", "ReportWriter"]
+options = ["FINISH"] + members
 system_prompt = (
     "You are a supervisor tasked with managing a conversation between the"
     f" following workers:  {members}. Given the following user request,"
     " respond with the worker to act next. Each worker will perform a"
     " task and respond with their results and status. When finished,"
     " respond with {'next': 'FINISH'}. You must respond in JSON and only JSON "
-    " Example response for choosing the reviewer to go next: {'next':'Reviewer'}"
+    " Example response: {'next':'Researcher'}"
 )
 # Our team supervisor is an LLM node. It just picks the next agent to process
 # and decides when the work is completed
-options = ["FINISH"] + members
 
 
 class routeResponse(BaseModel):
@@ -84,19 +85,20 @@ prompt = ChatPromptTemplate.from_messages(
     [
         SystemMessage(content=system_prompt),
         MessagesPlaceholder(variable_name="messages"),
-        SystemMessage(
+        HumanMessage(
             content="Given the conversation above, who should act next? "
             "Make sure to give your answer with a next property. "
-            "Return only a next value when choosing the next speaker "
-            "Example: {'next':'Reviewer'} "
-            f" Or should we FINISH? Select one of: {options}",
+            "Return a next value when choosing the next speaker also return a reasoning value to justify the choice"
+            "Example: {'next':'Researcher', 'reason': 'because the report has not been writen and no research is evident'} "
+            f" Or should we FINISH? Select one of these options: they must exactly match one of these words.: {options}",
         ),
     ]
 ).partial(options=str(options), members=", ".join(members))
 
 
 def supervisor_agent(state):
-    supervisor_chain = (prompt | llm.with_structured_output(routeResponse) )
+    parser = JsonOutputParser()
+    supervisor_chain = (prompt | json_llm | parser)
     # supervisor_chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
     ret =  supervisor_chain.invoke(state)
     return ret
@@ -142,14 +144,19 @@ class AgentState(TypedDict):
     next: Annotated[str, "A choice between one of the next agents to run"]
 
 
-research_agent = create_react_agent(llm, tools=[search], debug=True)
+research_agent = create_react_agent(llm, tools=[search], debug=True, 
+                                    state_modifier="""
+                                    You are a professional researcher, your job is to call tools with clever query inputs so that you will gain the most important information back from these tools to help
+                                    provide the best research for the task at hand. Once you have the research documents returned by your tools, then you are to do a comprehensive summary of all the documents and their key points.""")
 research_node = functools.partial(agent_node, agent=research_agent, name="Researcher")
 
-report_writer_agent = create_react_agent(llm, tools=[statusPrint], debug=False)
+report_writer_agent = create_react_agent(llm, tools=[statusPrint], debug=False,
+                                         state_modifier="""You are a professional report writer.  Your job is to write professional reports that contain information supplied to you by the research done on the topic.""")
 report_writer_node = functools.partial(agent_node, agent=report_writer_agent, name="ReportWriter")
 
 # NOTE: THIS PERFORMS ARBITRARY CODE EXECUTION. PROCEED WITH CAUTION
-reviewer_agent = create_react_agent(llm, tools=[statusPrint])
+reviewer_agent = create_react_agent(llm, tools=[statusPrint],
+                                    state_modifier="Your job is to review a report for correctness (according to the research provided) and to provide helpful critique for a report writer to use in creating a new draft of their report.")
 reviewer_node = functools.partial(agent_node, agent=reviewer_agent, name="Reviewer")
 
 workflow = StateGraph(AgentState)
@@ -157,7 +164,6 @@ workflow.add_node("Researcher", research_node)
 workflow.add_node("ReportWriter", report_writer_node)
 workflow.add_node("Reviewer", reviewer_node)
 workflow.add_node("supervisor", supervisor_agent)
-
 
 # Now connect all the edges in the graph.
 

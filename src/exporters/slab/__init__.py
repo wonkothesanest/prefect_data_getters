@@ -56,11 +56,11 @@ def __process_slab_docs(doc_file:str, meta_file: str,  semantic_chunker: TextSpl
         if(semantic_chunker):
             metadata.update({"type": "slab_chunk"})
             idx = 0
-            for str in semantic_chunker.split_text(content):
-                if(len(str) != 0):
+            for strc in semantic_chunker.split_text(content):
+                if(len(strc) != 0):
                     id = f"{metadata["document_id"]}_{idx}"
                     idx += 1
-                    docs.append(Document(id=id, page_content=str, metadata=metadata))
+                    docs.append(Document(id=id, page_content=strc, metadata=metadata))
         else:
             metadata.update({"type": "slab_document"})
             id = metadata["document_id"]
