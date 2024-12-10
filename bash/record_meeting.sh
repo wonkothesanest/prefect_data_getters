@@ -24,7 +24,8 @@ fi
 OUTPUT_FILE="call_recording_$(date +%Y%m%d_%H%M%S).wav"
 
 # Run ffmpeg with a 1.5 hour timeout (5400 seconds)
-timeout 5400 ffmpeg -f pulse -i combined.monitor -ac 2 -ar 44100 -y "$OUTPUT_FILE"
+# timeout 5400 ffmpeg...
+ffmpeg -f pulse -i combined.monitor -ac 2 -ar 44100 -y "$OUTPUT_FILE"
 
 # Check if ffmpeg command was terminated due to timeout
 if [ $? -eq 124 ]; then

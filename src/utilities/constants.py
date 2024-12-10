@@ -33,11 +33,16 @@ data_stores = [
         "name": "slack_messages",
         "description": "Messages exchanged in Slack, capturing real-time communication and discussions among team members across different channels.",
     },
+    {
+        "name": "bitbucket_pull_requests",
+        "description": "A list of pull requests performed at Omnidian and their comments and authors."
+    }
 ]
 VECTOR_STORE_NAMES = Literal[
     "email_messages",
     "jira_issues",
     "slab_document_chunks",
     "slab_documents",
-    "slack_messages"
+    "slack_messages",
+    "bitbucket_pull_requests",
 ]

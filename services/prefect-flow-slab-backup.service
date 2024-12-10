@@ -1,5 +1,5 @@
 [Unit]
-Description=Prefect Slack Updater Flow
+Description=Prefect Slab Updater Flow
 After=prefect-worker.service
 
 [Service]

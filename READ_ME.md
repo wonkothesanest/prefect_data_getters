@@ -29,3 +29,9 @@ We learned finally how modules are supposed to work (RTFM)
 import .module is working from a mod directory
 
 Tried to get docker working but then we realized what we really wanted was to run a commandline as a system... sound familiar? yeah its just like the server and the worker, duh.
+
+
+TODO List:
+* Make slab auto backup every week
+* Make gmail backup faster
+* Make Gmail backup more frequent (no dependence on thunderbird?)

@@ -49,8 +49,8 @@ def time_it(func):
     return wrapper
 
 # Example usage:
-@time_it
-def example_function():
-    time.sleep(2.5)  # Simulate some work
+# @time_it
+# def example_function():
+#     time.sleep(2.5)  # Simulate some work
 
-example_function()
+# example_function()

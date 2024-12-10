@@ -34,10 +34,9 @@ comment.comments[].body
 
 """
 
-
 from prefect import flow, task
 from prefect.blocks.system import Secret
-from atlassian import Jira
+from atlassian import Jira, Bitbucket
 from langchain.schema import Document
 from typing import List
 import utilities.constants as C  # Adjust the import based on your project structure
@@ -58,6 +57,21 @@ def get_jira_client() -> Jira:
     )
 
     return jira
+
+def get_bitbucket_client() -> Jira:
+    secret_block = Secret.load("prefect-bitbucket-credentials")
+    secret = secret_block.get()
+    username = secret["username"]
+    api_token = secret["api-token"]
+    url = secret["url"]
+    
+    bb = Bitbucket(
+        url=url,
+        username=username,
+        password=api_token
+    )
+    bb.get_pull_request()
+    return bb
 
 def get_issue_value(issue: dict, field_path: str):
     """Extracts the value from the issue dict given a dot-separated field path."""
@@ -85,6 +99,7 @@ DESIRED_FIELDS = [
     'status.statusCategory.name',
     'creator.displayName',
     'reporter.displayName',
+    'assignee.displayName',
     'issuetype.name',
     'issuetype.description',
     'issuetype.subtask',
@@ -94,6 +109,7 @@ DESIRED_FIELDS = [
     'resolutiondate',
     'watches.watchCount',
     'watches.isWatching',
+    'priority.name',
     'created',
     'updated',
     # Comments

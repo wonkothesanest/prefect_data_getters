@@ -289,8 +289,15 @@ for okr in OKR.okrs_2024_q4:
 
 # print(all_events)
 
-for r in all_reports:
-    print(f"{r["okr"]}\n\n{r["report"]}\n=============\n")
+# Create a timestamp
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+file_name = f"reporting_{timestamp}.md"
+
+# Open the file in write mode and write the reports
+with open(file_name, "w") as file:
+    for r in all_reports:
+        file.write(f"{r['okr']}\n\n{r['report']}\n=============\n")
+        
 
 # print(all_reports)
 i=0

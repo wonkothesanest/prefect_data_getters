@@ -51,6 +51,8 @@ def _create_document(doc: Document, name: VECTOR_STORE_NAMES) -> _AIDocument:
         return SlabDocument(doc)
     elif name == "slab_document_chunks":
         return SlabChunkDocument(doc)
+    elif name == "bitbucket_pull_requests":
+        return BitbucketPR(doc=doc)
     else:
         # Although we’ve covered all Literal options, this serves as a safeguard
         raise ValueError(f"Unknown document type: {name}")
@@ -183,6 +185,37 @@ Type: {self._get_metadata("type", "slab_chunk")}
 Owner: {self._get_metadata("owner")}
 Contributors: {self._get_metadata("contributors")}
 Topics: {self._get_metadata("topics")}
+Content:
+>>>>>>>>>>>>
+{self._document.page_content}
+>>>>>>>>>>>>
+{self._context_section()}
+Additional Metadata:
+{pprint.pformat(self._document.metadata)}
+END: {self._get_metadata("document_id")}
+>>>>>>>>>>>>
+"""
+        return s
+
+
+class BitbucketPR(_AIDocument):
+    def __init__(self, doc):
+        super().__init__(doc)
+        self.id = self._get_metadata("id")
+        self._type_name = "Bitbucket Pull Request"
+
+    def __str__(self):
+        s = f"""
+{super().__str__()}
+Document ID: {self._get_metadata("id")}
+Repository: {self._get_metadata("repo_slug")}
+Title: {self._get_metadata("title")}
+Type: {self._type_name}
+Author: {self._get_metadata("author_name")}
+Contributors: {self._get_metadata("all_participants")}
+Source Branch: {self._get_metadata("source_branch")}
+Destination Branch: {self._get_metadata("destination_branch")}
+Pull Request Status: {self._get_metadata("state")}
 Content:
 >>>>>>>>>>>>
 {self._document.page_content}
