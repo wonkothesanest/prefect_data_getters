@@ -3,7 +3,7 @@ Description=Prefect Jira Updater Flow
 After=prefect-worker.service
 
 [Service]
-ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect flow serve --cron "0 * * * *" /media/dusty/TB2/workspace/omnidian/prefect_data_getters/src/jira_backup.py:jira_backup_flow --name jira-backup-deployment
+ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect flow serve --cron "0 * * * *" /media/dusty/TB2/workspace/omnidian/prefect_data_getters/src/datagetters/jira_backup.py:jira_backup_flow --name jira-backup-deployment
 Restart=always
 User=dusty
 
