@@ -7,7 +7,7 @@ from time import sleep
 from urllib.parse import urlparse
 import requests
 from pick import pick
-from utilities.constants import SCRATCH_BASE_DIR
+from src.utilities.constants import SCRATCH_BASE_DIR
 
 
 from .slacker_module import Slacker, Conversations

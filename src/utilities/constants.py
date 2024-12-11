@@ -5,7 +5,7 @@ VECTOR_STORE_DIR = "/home/dusty/workspace/omnidian/vectorstores/"
 DEPLOYMENT_STORE_DIR = "/home/dusty/workspace/omnidian/deployments/"
 SCRATCH_BASE_DIR = "/home/dusty/workspace/omnidian/scratch"
 # Define the path to the mbox file
-MBOX_FILE_PATH = '/home/dusty/.thunderbird/NGBackups/ojl5cbdd.default-release-20241104-1126/ImapMail/imap.gmail.com/ME' 
+MBOX_FILE_PATH = '/home/dusty/.thunderbird/NGBackups/' 
 #TODO: Change this to be dynamic, for now this is a manual process.
 SLAB_BACKUP_DIR = "/media/dusty/TB2/workspace/dusty/langchain-example/data/slab_docs/data"
 

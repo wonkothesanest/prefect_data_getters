@@ -2,7 +2,7 @@ import pprint
 from langchain_core.documents import Document
 from datetime import datetime
 from typing import Literal
-from utilities.constants import VECTOR_STORE_NAMES  
+from src.utilities.constants import VECTOR_STORE_NAMES  
 import uuid
 
 

@@ -5,8 +5,8 @@ import glob
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import TextSplitter
-from stores.vectorstore import get_embeddings_and_vectordb
-from utilities import parse_date
+from src.stores.vectorstore import get_embeddings_and_vectordb
+from src.utilities import parse_date
 
 
 def process_slab_docs(backup_dir, split:bool = True) -> list[Document]:

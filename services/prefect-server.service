@@ -3,6 +3,7 @@ Description=Prefect Server
 After=network.target
 
 [Service]
+WorkingDirectory=/media/dusty/TB2/workspace/omnidian/prefect_data_getters
 ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect server start
 Restart=always
 User=dusty

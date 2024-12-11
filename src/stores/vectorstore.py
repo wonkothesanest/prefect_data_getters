@@ -2,12 +2,12 @@ import os
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain.schema import Document
-from utilities.constants import VECTOR_STORE_DIR
+from src.utilities.constants import VECTOR_STORE_DIR
 from langchain_elasticsearch import ElasticsearchStore
 
 from langchain_community.vectorstores import ElasticVectorSearch
 import os
-import utilities.constants as C
+import src.utilities.constants as C
 
 # Constants
 EMB_MODEL = "sentence-transformers/all-MiniLM-L6-v2"

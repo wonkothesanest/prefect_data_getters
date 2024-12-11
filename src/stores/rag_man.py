@@ -4,15 +4,15 @@ from langchain_elasticsearch import ElasticsearchStore
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain.retrievers.document_compressors import LLMChainFilter
-import stores.vectorstore as vectorstore
-import utilities.constants as C
+import src.stores.vectorstore as vectorstore
+import src.utilities.constants as C
 from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from stores.documents import _AIDocument, SlackMessageDocument, convert_documents_to_ai_documents
+from src.stores.documents import _AIDocument, SlackMessageDocument, convert_documents_to_ai_documents
 from typing import List
 from typing import List, Literal, Optional, Annotated
 from datetime import datetime

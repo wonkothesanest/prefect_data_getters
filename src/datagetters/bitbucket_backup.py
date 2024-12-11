@@ -4,8 +4,8 @@ from prefect import flow, task
 from prefect.blocks.system import Secret
 from atlassian.bitbucket import Cloud
 from langchain.schema import Document
-from exporters.jira import get_bitbucket_client, format_pull_request_to_document
-from stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
+from src.exporters.jira import get_bitbucket_client, format_pull_request_to_document
+from src.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
 
 WORKSPACE_NAME = "omnidiandevelopmentteam"
 

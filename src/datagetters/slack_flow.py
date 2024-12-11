@@ -1,16 +1,16 @@
 from prefect import flow, task
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
-from exporters import add_default_metadata
-from utilities.prefect import get_last_successful_flow_run_timestamp
+from src.exporters import add_default_metadata
+from src.utilities.prefect import get_last_successful_flow_run_timestamp
 from datetime import datetime, timedelta
 from glob import glob
-from exporters.slack.slack_backup import do_backup  # Adjust the import as needed
-import exporters.slack.slack_postprocess as slack_postprocess
-from stores.vectorstore import ESVectorStore, batch_process_and_store, get_embeddings_and_vectordb
-import utilities.constants as C
+from src.exporters.slack.slack_backup import do_backup  # Adjust the import as needed
+from src.exporters.slack import slack_postprocess
+from src.stores.vectorstore import ESVectorStore, batch_process_and_store, get_embeddings_and_vectordb
+from src.utilities import constants as C
 from prefect.filesystems import LocalFileSystem
-from  prefect.artifacts import create_markdown_artifact
+from prefect.artifacts import create_markdown_artifact
 
 
 @task

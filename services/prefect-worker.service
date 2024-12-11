@@ -3,6 +3,7 @@ Description=Prefect Worker
 After=prefect-server.service
 
 [Service]
+WorkingDirectory=/media/dusty/TB2/workspace/omnidian/prefect_data_getters
 ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect worker start --pool default
 Restart=always
 User=dusty

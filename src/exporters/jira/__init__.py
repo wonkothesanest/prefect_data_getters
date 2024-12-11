@@ -40,8 +40,8 @@ from atlassian import Jira, Bitbucket
 from atlassian.bitbucket import Cloud
 from langchain.schema import Document
 from typing import List
-import utilities.constants as C  # Adjust the import based on your project structure
-from stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
+import src.utilities.constants as C  # Adjust the import based on your project structure
+from src.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
 from datetime import datetime
 
 def get_jira_client() -> Jira:

@@ -1,7 +1,7 @@
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain.schema import Document
 from datetime import datetime
-from utilities import parse_date
+from src.utilities import parse_date
 
 
 def get_email_body(message) -> str:

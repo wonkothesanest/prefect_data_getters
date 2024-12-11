@@ -3,9 +3,9 @@ import asyncio
 from datetime import datetime
 from typing import Annotated, List, Optional
 
-from stores.documents import _AIDocument
-from stores.rag_man import MultiSourceSearcher
-import utilities.constants as C
+from src.stores.documents import _AIDocument
+from src.stores.rag_man import MultiSourceSearcher
+import src.utilities.constants as C
 
 from langchain.tools import tool
 

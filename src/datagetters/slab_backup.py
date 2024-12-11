@@ -1,11 +1,11 @@
 from prefect import flow, task
 from langchain.schema import Document
 from typing import List
-from exporters import add_default_metadata
-from utilities.constants import SLAB_BACKUP_DIR
-from stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
+from src.exporters import add_default_metadata
+from src.utilities.constants import SLAB_BACKUP_DIR
+from src.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
 from langchain_community.vectorstores.utils import filter_complex_metadata
-from exporters.slab import process_slab_docs
+from src.exporters.slab import process_slab_docs
 
 
 @task

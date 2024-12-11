@@ -3,11 +3,11 @@ from prefect.blocks.system import Secret
 from atlassian import Jira
 from langchain.schema import Document
 from typing import List
-from exporters import add_default_metadata
-import utilities.constants as C  
-from stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb, ESVectorStore
+from src.exporters import add_default_metadata
+import src.utilities.constants as C  
+from src.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb, ESVectorStore
 from datetime import datetime
-from exporters.jira import get_jira_client, format_issue_to_document 
+from src.exporters.jira import get_jira_client, format_issue_to_document 
 
 @task
 def fetch_jira_issues(jql: str, max_results: int = 100) -> List[dict]:
