@@ -31,6 +31,8 @@ import .module is working from a mod directory
 Tried to get docker working but then we realized what we really wanted was to run a commandline as a system... sound familiar? yeah its just like the server and the worker, duh.
 
 
+For installation you need to run pip install -e . from the base directory (where setup.py is). 
+
 TODO List:
 * Make slab auto backup every week
 * Make gmail backup faster
