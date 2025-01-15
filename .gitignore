@@ -4,7 +4,7 @@ env/
 .vscode/
 scratch/
 *.wav
+src/stores/__pycache__/rag_man.cpython-312.pyc
+src/stores/__pycache__/rag_man.cpython-312.pyc
 *.pyc
-src/stores/__pycache__/rag_man.cpython-312.pyc
-src/stores/__pycache__/rag_man.cpython-312.pyc
 /reporting*.md
