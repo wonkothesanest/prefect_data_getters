@@ -13,16 +13,17 @@ from prefect.filesystems import LocalFileSystem
 from prefect.artifacts import create_markdown_artifact
 
 
+
 @task
-def perform_backup(token, start_timestamp=None, cookie=None):
+def perform_backup(token, start_timestamp=None, cookie=None, public_channels:list[str]=None):
     """
     Task to perform Slack backup using the do_backup function.
     """
-    # return "/media/dusty/TB2/workspace/omnidian/prefect_data_getters/20241022-102918-slack_export"
     backup_directory = do_backup(
         token=token,
         start_from_timestamp=start_timestamp,
-        cookie=cookie
+        cookie=cookie,
+        public_channels=public_channels,
     )
     return backup_directory
 
@@ -46,7 +47,7 @@ def store_vector_db(messages, backupdir):
     
 
 @flow(name="slack-backup-flow",log_prints=True)
-def slack_backup_flow():
+def slack_backup_flow(first_date: str | None = None, public_channel: list[str] | None = None):
     """
     Main Prefect flow to perform the Slack backup and process the message files.
     """
@@ -59,20 +60,30 @@ def slack_backup_flow():
     if not cookie:
         raise ValueError("Slack cookie is not set. Please set the 'slack_cookie' Prefect variable.")
 
+    last_successful_timestamp = None
     # Optional parameters (adjust as needed)    
     # Get the last successful run timestamp
-    last_successful_timestamp = get_last_successful_flow_run_timestamp("slack-backup-flow")
+    if(first_date is not None):
+        try:
+            last_successful_timestamp = datetime.fromisoformat(first_date).timestamp()
+            print(f"Using user supplied first date: {first_date} as {last_successful_timestamp} timestamp")
+        except:
+            print(f"parsing first date did not work {first_date}.")
+    
+    if(last_successful_timestamp is None):
+        last_successful_timestamp = get_last_successful_flow_run_timestamp("slack-backup-flow")
 
 
     # last_successful_timestamp = (datetime.now() - timedelta(days=60)).timestamp()
-    print(f"Last timestamp successfully run {last_successful_timestamp}. Now is {datetime.now().timestamp()}")
+    print(f"Start time: {last_successful_timestamp}. Now is {datetime.now().timestamp()}")
     create_markdown_artifact(f"Start Time: {datetime.fromtimestamp(last_successful_timestamp)}\nEnd Time: {datetime.now()}")
 
     # Step 1: Perform the backup
     backup_directory = perform_backup(
         token=token,
         start_timestamp=last_successful_timestamp,
-        cookie=cookie
+        cookie=cookie,
+        public_channels=public_channel
     )
     # backup_directory = "/home/dusty/workspace/omnidian/scratch/20241029-133915-slack_export"
 

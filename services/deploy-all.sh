@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Run from top level of project
 # Define the services directory
 SERVICES_DIR="./services"
 

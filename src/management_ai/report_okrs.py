@@ -34,9 +34,9 @@ from langchain_core.messages import BaseMessage, ChatMessage
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import create_react_agent
 from langchain_core.callbacks import StdOutCallbackHandler
-import tools.search as searchers
-import agents.report_template_okrs as OKR
-import agents.reporting as P
+import prefect_data_getters.tools.search as searchers
+import management_ai.agents.report_template_okrs as OKR
+import management_ai.agents.reporting as P
 
 
 
@@ -46,7 +46,7 @@ from langchain_core.messages import AIMessage
 import json
 import asyncio
 from collections import defaultdict
-import utilities.constants as C
+import prefect_data_getters.utilities.constants as C
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from prefect_data_getters.utilities.timing import print_human_readable_delta

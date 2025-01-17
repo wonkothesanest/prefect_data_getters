@@ -8,7 +8,7 @@ class person:
 
 HYPERION = [
     person("Adam", "Albaum"),
-    person("Mauri","Agueda"),
+    person("Eynner","Herrera"),
     person("Suzannah", "Osekowsky"),
     person("Mike", "Beenen"),
     person("Chatis", "Santos"),

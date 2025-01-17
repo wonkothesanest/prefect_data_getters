@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from prefect_data_getters.stores.rag_man import MultiSourceSearcher
-from reporting import run_report, write_reports
+from management_ai.reporting import run_report, write_reports
 
 from prefect_data_getters.utilities.people import HYPERION,person
 
@@ -26,26 +26,27 @@ def generate_people_reports_over_time():
     week2 = now - timedelta(weeks=2)
     week3 = now - timedelta(weeks=3)
     week4 = now - timedelta(weeks=4)
-    week5 = now - timedelta(weeks=5)
     
     dates = [
-        (week5, week4),
         (week4, week3),
         (week3, week2),
         (week2, week1),
         (week1, now),
         ]
-    for p in HYPERION[0:1]:
+    for p in HYPERION:
+        person_reports = []
         for start,end in dates:
-            print(f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}")
+            print(f"{p.first}: {start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}")
             r = run_report(
                 docs=_get_documents(p, from_date=start, to_date=end),
                 report_message=_get_report_query(p),
             )
             r = f"{p.first} {p.last} report from {start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}\n\n" + r
             all_reports.append(r)
+            person_reports.append(r)
 
-        write_reports(all_reports, f"People {p.first}  from {week5.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}")
+        write_reports(person_reports, f"People  from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} {p.first}")
+    write_reports(all_reports, f"People  from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} all")
     
 def _get_report_query(p: person):
     return f"""
