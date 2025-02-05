@@ -71,7 +71,7 @@ def slack_backup_flow(first_date: str | None = None, public_channel: list[str] |
             print(f"parsing first date did not work {first_date}.")
     
     if(last_successful_timestamp is None):
-        last_successful_timestamp = get_last_successful_flow_run_timestamp("slack-backup-flow")
+        last_successful_timestamp = get_last_successful_flow_run_timestamp("slack-backup-flow") - timedelta(days=1).total_seconds()
 
 
     # last_successful_timestamp = (datetime.now() - timedelta(days=60)).timestamp()

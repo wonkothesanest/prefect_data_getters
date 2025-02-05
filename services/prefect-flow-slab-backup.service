@@ -4,7 +4,7 @@ After=prefect-worker.service
 
 [Service]
 WorkingDirectory=/media/dusty/TB2/workspace/omnidian/prefect_data_getters
-ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect flow serve --cron "0 * * * *" /media/dusty/TB2/workspace/omnidian/prefect_data_getters/src/prefect_data_getters/datagetters/slab_backup.py:slab_backup_flow --name slab-backup-deployment
+ExecStart=/media/dusty/TB2/workspace/omnidian/prefect_data_getters/env/bin/prefect flow serve --cron "0 12 * * *" /media/dusty/TB2/workspace/omnidian/prefect_data_getters/src/prefect_data_getters/datagetters/slab_backup.py:slab_backup_flow --name slab-backup-deployment
 Restart=always
 User=dusty
 
