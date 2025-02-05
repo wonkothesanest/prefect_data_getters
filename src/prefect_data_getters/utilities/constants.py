@@ -36,6 +36,10 @@ data_stores = [
     {
         "name": "bitbucket_pull_requests",
         "description": "A list of pull requests performed at Omnidian and their comments and authors."
+    },
+    {
+        "name": "google_calendar_events",
+        "description": "All Calendar events that have appeared on my calendar."
     }
 ]
 ALL_INDEXES = [d["name"] for d in data_stores]
@@ -46,4 +50,5 @@ VECTOR_STORE_NAMES = Literal[
     "slab_documents",
     "slack_messages",
     "bitbucket_pull_requests",
+    "google_calendar_events",
 ]
