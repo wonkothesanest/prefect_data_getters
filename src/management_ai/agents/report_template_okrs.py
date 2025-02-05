@@ -1,13 +1,78 @@
-OKR_SECTION_EXAMPLE = """
-"""
 class okr:
-    def __init__(self, team, title, description):
+    def __init__(self, team, title, description, search_queries: list = []):
         self.team = team
         self.title = title
         self.description = description
+        self.search_queries = search_queries
     def __str__(self):
         return f"OKR Summary:\n  Team: {self.team}\n  Title: {self.title}\n  Description: {self.description}"
+    
 
+okrs_2025_q1 = [
+
+    okr(
+        team="",
+        title="Sigma Visibility into Key Metrics",
+        description="Provide the company with visibility into key metrics for onboarding, data acquisition, and client portal through Sigma or the appropriate analytics tool(s)."
+    ),
+    okr(
+        team="ONBRD",
+        title="KR 62: Residential Operations is launched on SalesForce Service Cloud",
+        description="""
+The Onboarding team's responsibility for this project is to ensure that during onboarding the assets are properly synced to service cloud
+without error.  We need to make sure that the Contacts are also synced when onboarding so that Salesforce has a representation of the 
+asset's key contacts. some key phrases that might be linked to this project are "Asset Sync", "Salesforce Service", 
+"contact Sync", "Channel Partner assets", "Hybrid Clients" and "Ticket Service". There has to be special consideration paid to Channel Partner assets and Hybrid Clients
+"""
+    ),
+    okr(
+        team="",
+        title="",
+        description="""
+"""
+    ),
+    okr(
+        team="",
+        title="",
+        description="""
+"""
+    ),
+    okr(
+        team="CLIENT",
+        title="KR 11: Clients Can see Cases and work order data and customer communication in the client portal",
+        description="""
+Our clients used to have access to Zendesk but as we transition to Salesforce Service Cloud we want them to start 
+logging into our client portal to see the on going work and the communications on each ticket (Cases and Workorders).
+The Client Portal is a user interface for our clients to log into and review their Solar data. 
+
+        """
+    ),
+    okr(
+        team="CLIENT",
+        title="KR 4: User Engagement metrics for Client Portal",
+        description="""
+- We have a centralized system for reviewing user engagement metrics. 
+- They will achieve the desires to understand customer engagement
+- Review of User Engagement Analytic Tool Capabilities
+- Same Metrics system across Resolv & Client Portal
+- Grading Criteria: Dashboard viewable by product that gives insight into at least 1 aspect of customer engagement through the portals
+"""
+    ),
+    okr(
+        team="INGEST",
+        title="KR 29: Ingest power, voltage, and current (PVC) for Greenbyte and Also Energy assets",
+        description="""1. Also Energy and GreenByte PVC is available as accessable data in Timeseries Database
+2. No greater than 1 hour delay from ingestion to availability
+3. Data is in a normalized format across all providers"""
+    ),
+    okr(
+        team="INGEST",
+        title="Ingest battery heuristic data for Enphase DAS",
+        description="""1. At least 3 streams of site-level battery data (charge, discharge, and SOC) are landed in Databricks and ready for analysis for Enphase
+2. Data delay is < 1 hour
+3. Data is aggregated to hourly and daily data."""
+    ),
+]
 okrs_2024_q4 = [
     # Data Acquisition Team (INGEST)
     okr(
@@ -120,6 +185,3 @@ okrs_2024_q4 = [
         description="Successfully deploy the Residential Client Portal, providing EverBright with real-time access to support cases and service activities."
     )
 ]
-
-OKR_REPORT_DESCRIPTION = """
-"""

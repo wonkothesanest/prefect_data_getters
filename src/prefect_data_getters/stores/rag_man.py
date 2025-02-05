@@ -17,7 +17,7 @@ from typing import List
 from typing import List, Literal, Optional, Annotated
 from datetime import datetime
 from langchain_elasticsearch.vectorstores import _hits_to_docs_scores
-
+from langchain_community.vectorstores import ElasticVectorSearch
 
 class AcceptRejectDataStore(BaseModel):
     """Response indicating whether to accept or reject the datastore."""
@@ -59,6 +59,20 @@ class MultiSourceSearcher:
 
         # Initialize LLMChainFilter
         self.llm_filter = LLMChainFilter.from_llm(self.llm)
+    def get_retrievers(self) -> list[ElasticVectorSearch]:
+        retrievers = []
+        return [s["store"] for s in self.stores]
+        # for s in self.stores:
+        #     store = s["store"]
+        #     name = s["name"]
+        #     vectorstore = ElasticVectorSearch(
+        #         elasticsearch_url=C.ES_URL,
+        #         index_name=name,
+        #         embedding=self.embeddings
+        #     )
+        #     retrievers.append(vectorstore)
+        # return retrievers
+
 
     async def select_stores(self, query: str) -> List[ElasticsearchStore]:
         """Uses the LLM to select relevant data stores based on the query."""
@@ -169,12 +183,21 @@ Query to transform: {query}
             for store_info in selected_stores:
                 store:ElasticsearchStore = store_info["store"]
                 temp_results = store.similarity_search_by_vector_with_relevance_scores(qemb, top_k, filter=es_filter, num_candidates=10*top_k)
+                    
                 temp_results_d = [d[0] for d in temp_results]
+                temp_results_s = [d[1] for d in temp_results]
                 docs = convert_documents_to_ai_documents(temp_results_d, store._store.index)
+                for i in range(len(docs)):
+                    docs[i].search_score = temp_results_s[i]
+                
                 if("slack" in store_info["name"]):
                     docs = extend_slack_messages(docs)
-                for i in range(len(temp_results)):
-                    search_results.append((docs[i], temp_results[i][1]))
+                #todo: change search_results from a tuple to just a docs list and filter on search_score
+                for i in range(len(docs)):
+                    search_results.append((
+                            docs[i], 
+                            list(filter(lambda d: d[0].metadata == docs[0]._document.metadata, temp_results))[0][1]
+                        ))
 
         # Sort results by relevance score in descending order
         search_results.sort(key=lambda x: x[1], reverse=True)
@@ -188,10 +211,10 @@ Query to transform: {query}
         if run_llm_reduction:
             for d in combined_results:
                 docs.extend(self.llm_filter.compress_documents([d], query))
-                if len(docs) >= top_k:
-                    break
+                # if len(docs) >= top_k:
+                #     break
         else:
-            docs = combined_results[:top_k]
+            docs = combined_results #[:top_k]
 
         # Return sorted filtered results
         return docs
@@ -288,9 +311,9 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 
 def extend_slack_messages(
-    slack_messages: list[SlackMessageDocument],
+    slack_messages: list[_AIDocument],
     minutes_before_after: int = 120
-) -> list[SlackMessageDocument]:
+) -> list[_AIDocument]:
     """
     Process a list of SlackMessageDocuments by:
     1. Deduplicating by thread_ts (if present) or by ts if not.
@@ -417,10 +440,10 @@ def extend_slack_messages(
 
 
 def _extend_slack_message(
-    slack_message: SlackMessageDocument, 
+    slack_message: _AIDocument, 
     from_time: datetime = None, 
     to_time: datetime = None
-) -> SlackMessageDocument:
+) -> _AIDocument:
     """
     Internal function to extend a Slack message by retrieving related context messages from the same channel.
     If it's part of a thread, retrieves all messages from the thread.

@@ -55,6 +55,7 @@ class AgentState(TypedDict):
     # The annotation tells the graph that new messages will always
     # be added to the current states
     messages: Annotated[Sequence[BaseMessage], operator.add]
+    prompt: str
     template: str
     okr: OKR.okr
     research: str
@@ -95,43 +96,47 @@ def _format_research(all_docs: list):
 
 def get_documents(state: AgentState):
     okr = state["okr"]
-    query_prompt = P.query_prompt(f"Find me information on the following OKR: {state["okr"].title}, {state['okr'].description}")
+    query_prompt = P.query_prompt(f"Find me information on the following OKR: {state["okr"].title} \n {state['okr'].description}")
     query_result = (query_prompt| json_llm).invoke(state)
     query_result = json.loads(query_result.content)
     llm_reduction = False
-    jiras = asyncio.run(searcher.search(
-        query=query_result["search_queries"][0],
-        top_k=50,
-        keywords = None,
-        from_date = datetime.now() - timedelta(weeks=12),
-        indexes = ['jira_issues'],
-        metadata_filter = {"project_key": okr.team},
-        run_llm_reduction = llm_reduction
-    ))
+    jiras, slabs, slacks, emails = [],[],[],[]
 
-    slabs = asyncio.run(searcher.search(
-        query=query_result["search_queries"][0],
-        top_k=5,
-        keywords = query_result.get("keywords", None),
-        #from_date = datetime.now() - timedelta(weeks=2),
-        indexes = ['slab_documents'],
-        run_llm_reduction = llm_reduction
-    ))
-    emails = asyncio.run(searcher.search(
-        query=query_result["search_queries"][0],
-        top_k=10,
-        keywords = None,
-        from_date = datetime.now() - timedelta(weeks=12),
-        indexes = ['email_messages'],
-        run_llm_reduction = llm_reduction
-    ))
-    slacks = asyncio.run(searcher.search(
-        query=query_result["search_queries"][0],
-        top_k=10,
-        keywords = None,
-        indexes = ['slack_messages'],
-        run_llm_reduction = llm_reduction
-    ))
+    for qr in query_result["search_queries"]:
+        jiras += asyncio.run(searcher.search(
+            query=qr,
+            top_k=50,
+            keywords=None,
+            from_date=datetime.now() - timedelta(weeks=12),
+            indexes=['jira_issues'],
+            metadata_filter={"project_key": okr.team},
+            run_llm_reduction=llm_reduction
+        ))
+
+        slabs += asyncio.run(searcher.search(
+            query=qr,
+            top_k=5,
+            keywords=query_result.get("keywords", None),
+            # from_date=datetime.now() - timedelta(weeks=2),
+            indexes=['slab_documents'],
+            run_llm_reduction=llm_reduction
+        ))
+        emails += asyncio.run(searcher.search(
+            query=qr,
+            top_k=10,
+            keywords=None,
+            from_date=datetime.now() - timedelta(weeks=12),
+            indexes=['email_messages'],
+            run_llm_reduction=llm_reduction
+        ))
+        slacks += asyncio.run(searcher.search(
+            query=qr,
+            top_k=10,
+            keywords=None,
+            indexes=['slack_messages'],
+            run_llm_reduction=llm_reduction
+        )) 
+
     all_docs =  slabs + jiras + emails + slacks
 
     r = _format_research(all_docs)
@@ -183,41 +188,7 @@ def document_summarizer(state: AgentState):
 
 def report_writer(state: AgentState):
     okr = state["okr"]
-    query = f"""
-I need a report to be written about an OKR. Here is some information about the OKR for my {okr.team} team.
-Title: {okr.title}
-Description: {okr.description}
-
-The short report should have the following sections to it
-* Status
-* Progress
-* Next Steps
-* Blockers
-
-Status can be In Progress, Done, At Risk or Postponed
-
-You should use the documents below, especially the JIRA ones to pull together a cohesive summary of work done recently and what is next.
-Here is an example of the output I would like to see:
-
-EXAMPLE: 
-
-## KR 1.1: An example title of a KR
-### Status: AT RISK
-### Progress:
-* Brief description of what is in progress.
-* Another item
-### Next Steps:
-* Items that are next up to be done
-### New Risks:
-* Any Risks identified
-### Blockers:
-* None.
-
-### Backup Documentation
-* Have a list of documents that back up your report
-* List them out in this section.
-
-"""
+    query = state["prompt"]
     prompt = P.report_prompt(query, 
                              state['research'], 
                              state.get("report_history", None)[-1] if state["report_history"] else "")
@@ -248,6 +219,56 @@ def node_after_reviewer(state: AgentState):
     return END if state.get("is_finished", False) else "ReportWriter"
 
 
+# ====== Report Prompts ======
+def status_update_prompt(okr):
+    return f"""
+I need a report to be written about an OKR. Here is some information about the OKR for my {okr.team} team.
+Title: {okr.title}
+Description: {okr.description}
+
+The short report should have the following sections to it
+* Status
+* Recent Progress
+* Next Steps
+* Blockers
+* Milestones identified and any dates
+
+Status can be In Progress, Done, At Risk or Postponed
+
+You should use the documents below, especially the JIRA ones to pull together a cohesive summary of work done recently and what is next.
+Here is an example of the output I would like to see:
+
+EXAMPLE: 
+
+## KR 1.1: An example title of a KR
+### Status: AT RISK
+### Progress:
+* Brief description of what is in progress.
+* Another item
+### Next Steps:
+* Items that are next up to be done
+### New Risks:
+* Any Risks identified
+### Blockers:
+* None.
+### Milestones identified
+* 2025/01/30 - Description of milestone
+### Backup Documentation
+* Have a list of documents that back up your report
+* List them out in this section.
+
+    """
+
+def project_planning_prompt(okr):
+    return f"""
+I need a project plan written about an OKR. Here is some information about the OKR for my {okr.team} team.
+Title: {okr.title}
+Description: {okr.description}
+
+Review the documentation provided and help plan out a detailed Project plan complete with Milestones and key stories and tasks laid out 
+to help us complete this project for the quarter.
+    """
+
 
 # ====== WORKFLOW GRAPH ======
 
@@ -268,10 +289,10 @@ graph = workflow.compile(debug=False)
 
 all_events = []
 all_reports = []
-for okr in OKR.okrs_2024_q4:
+for okr in OKR.okrs_2025_q1[4:5]:
     start_time = datetime.now()
     report = None
-    for event in graph.stream({"messages": [], "okr": okr}, stream_mode="values"):
+    for event in graph.stream({"messages": [], "okr": okr, "prompt": status_update_prompt(okr)}, stream_mode="values"):
         all_events.append(event)
         if(event.get("report", None)):
             report = event.get('report')

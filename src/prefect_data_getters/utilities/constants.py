@@ -38,6 +38,7 @@ data_stores = [
         "description": "A list of pull requests performed at Omnidian and their comments and authors."
     }
 ]
+ALL_INDEXES = [d["name"] for d in data_stores]
 VECTOR_STORE_NAMES = Literal[
     "email_messages",
     "jira_issues",

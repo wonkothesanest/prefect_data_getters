@@ -12,6 +12,7 @@ class _AIDocument:
         self._type_name = None
         self.id = self._document.id
         self.page_content = self._document.page_content
+        self.search_score = None
     
     def set_page_content(self, content: str) -> None:
         self._document.page_content = content
