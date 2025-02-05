@@ -371,6 +371,7 @@ def doTestAuth(slack):
     print("Successfully authenticated for team {0} and user {1} ".format(teamName, currentUser))
     return testAuth
 
+
 def bootstrapKeyValues(slack, suppliedChannels=None, suppliedGroups=None, oldestTimestamp=None):
     users = []
     channels = []
@@ -402,7 +403,7 @@ def bootstrapKeyValues(slack, suppliedChannels=None, suppliedGroups=None, oldest
         channels = list(filter(lambda obj: obj["name"] in suppliedChannels, channels))
     else:
         channels = list(filter(lambda obj: obj["is_member"], channels))
-
+    
     print("Found {0} Public Channels".format(len(channels)))
 
     # Fetch groups
@@ -417,8 +418,19 @@ def bootstrapKeyValues(slack, suppliedChannels=None, suppliedGroups=None, oldest
     if suppliedGroups is not None:
         groups = list(filter(lambda obj: obj["name"] in suppliedGroups, groups))
     else:
-        groups = list(filter(lambda obj: obj["is_member"], groups))
-
+        # If a group chat we have a cut off of when the group was updated if the number of members is 4 or more
+        # The thinking behind this is every time we update we look at > 1000 dead stale chats. 1:1s stay alive for a long time
+        # big groups get turned into channels.
+        groups = list(filter(
+            lambda obj: (
+                obj["is_member"] and (
+                    (not obj.get("is_mpim", False)) or
+                    (obj["is_mpim"] and obj["num_members"] > 3 and obj["updated"] > oldestTimestamp*1000 - timedelta(days=31).total_seconds()*1000) or
+                    (obj["is_mpim"] and obj["num_members"] <= 3)
+                )
+            ),
+            groups
+        ))
     print("Found {0} Private Channels or Group DMs".format(len(groups)))
 
     # Fetch DMs
