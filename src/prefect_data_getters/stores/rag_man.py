@@ -18,6 +18,9 @@ from typing import List, Literal, Optional, Annotated
 from datetime import datetime
 from langchain_elasticsearch.vectorstores import _hits_to_docs_scores
 from langchain_community.vectorstores import ElasticVectorSearch
+from langchain_huggingface import HuggingFacePipeline
+from transformers import pipeline, AutoTokenizer
+import torch
 
 class AcceptRejectDataStore(BaseModel):
     """Response indicating whether to accept or reject the datastore."""
@@ -59,6 +62,11 @@ class MultiSourceSearcher:
 
         # Initialize LLMChainFilter
         self.llm_filter = LLMChainFilter.from_llm(self.llm)
+        self.summarization_pipeline = None
+        self.cuda_device = 0 if torch.cuda.is_available() else -1
+        self.summarization_llm = None
+        self.tokenizer = AutoTokenizer.from_pretrained("sshleifer/distilbart-cnn-6-6")
+
     def get_retrievers(self) -> list[ElasticVectorSearch]:
         retrievers = []
         return [s["store"] for s in self.stores]
@@ -125,7 +133,7 @@ Query to transform: {query}
         to_date: Annotated[Optional[datetime], "End date for the date range filter"] = None,
         indexes: Annotated[Optional[List[str]], "List of specific vector store names to search"] = None,
         metadata_filter: Annotated[Optional[dict], "Metadata filters as key-value pairs"] = None,
-        run_llm_reduction: Annotated[Optional[bool], "Whether to use LLM-based reduction on the results"] = False
+        run_lm_reduction: Annotated[Optional[bool], "Whether to use ML reduction on the results"] = False,
     ) -> List[_AIDocument]:
         """
         Perform a multi-source search with keyword and embedding filters, optional date range, and LLM reduction.
@@ -206,11 +214,12 @@ Query to transform: {query}
         combined_results = [d[0] for d in search_results]
         combined_results = list({c.id: c for c in combined_results}.values())
 
-        # Apply LLM reduction if requested
+        # Apply reduction if requested
         docs = []
-        if run_llm_reduction:
+        if run_lm_reduction:
             for d in combined_results:
-                docs.extend(self.llm_filter.compress_documents([d], query))
+                d.set_page_content(self.summarize(d.page_content))
+                docs.append(d)
                 # if len(docs) >= top_k:
                 #     break
         else:
@@ -218,7 +227,6 @@ Query to transform: {query}
 
         # Return sorted filtered results
         return docs
-    
 
 
     def search_by_username(
@@ -302,8 +310,46 @@ Query to transform: {query}
         if("slack" in index):
             docs = extend_slack_messages(docs)
         return docs
-    
+    def chunk_text(self,text, max_tokens=1000, overlap=100):
+        tokens = self.tokenizer.encode(text)
+        chunks = []
+        start = 0
+        while start < len(tokens):
+            end = min(start + max_tokens, len(tokens))
+            chunks.append(self.tokenizer.decode(tokens[start:end]))
+            start += max_tokens - overlap  # Overlap helps retain context
+        return chunks
 
+    def summarize(self, text):
+        if(len(text)<1024*3):
+            return text
+        if not self.summarization_pipeline:
+            self.summarization_pipeline = pipeline(
+                "summarization", 
+                model="sshleifer/distilbart-cnn-6-6",
+                device=self.cuda_device,  # This ensures the model runs on CPU
+                max_length=512,
+                min_length=30,
+            )
+            self.summarization_llm = HuggingFacePipeline(pipeline=self.summarization_pipeline)
+
+        try:        
+            chunks = self.chunk_text(text)
+            summaries = [self.summarization_llm.invoke(chunk) for chunk in chunks]
+            summary =  " ".join(summaries)
+
+            # summary = self.summarization_llm.invoke(text)
+        except torch.cuda.OutOfMemoryError:
+            print("Out of Memory! Clearing Cache...")
+            summary = text
+            # Release memory after summarization
+            del self.summarization_pipeline
+            del self.summarization_llm
+            torch.cuda.empty_cache()
+            self.summarization_pipeline = None
+            self.summarization_llm = None
+
+        return summary
 
 from datetime import datetime, timedelta
 from collections import defaultdict

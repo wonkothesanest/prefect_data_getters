@@ -25,26 +25,69 @@ def process_slab_docs(backup_dir, split:bool = True) -> list[Document]:
     print("number of documents processed: ", len(processed_documents))
     return processed_documents
 
+def __get_all_users(backup_dir):
+    with open(os.path.join(os.path.dirname(backup_dir), 'allUsers.json')) as f:
+        data = json.load(f)
+    users = {user['id']: user for user in data['data']['session']['organization']['users']}
+    return users
 
+def __get_all_topics(backup_dir):
+    with open(os.path.join(os.path.dirname(backup_dir), 'allTopics.json')) as f:
+        data = json.load(f)
+    topics = {topic['id']: topic for topic in data['data']['session']['organization']['topics']}
+    return topics
+
+def __get_user(user_id, users):
+    return users.get(user_id)
+
+def __get_user_info(user_id, users):
+    user = __get_user(user_id, users)
+    if user:
+        name = user.get("name")
+        email = user.get("email")
+        return f"{name} - {email}" if email else name
+    return None
+
+def __get_topic(topic_id, topics):
+    return topics.get(topic_id)
+
+def __get_topic_ancestors(topic_id, topics):
+    ancestors = []
+    current_topic = __get_topic(topic_id, topics)
+    while current_topic and current_topic.get('parent'):
+        parent_id = current_topic['parent']['id']
+        parent_topic = __get_topic(parent_id, topics)
+        if parent_topic:
+            ancestors.append(parent_topic)
+            current_topic = parent_topic
+        else:
+            break
+    return ancestors
 
 def __process_slab_docs(doc_file:str, meta_file: str,  semantic_chunker: TextSplitter = None)-> list[Document]:
+    backup_dir = os.path.dirname(doc_file)
+    users = __get_all_users(backup_dir)
+    topics = __get_all_topics(backup_dir)
     
     with open(meta_file) as f:
         slab_meta = json.load(f)
         slab_meta = slab_meta["data"]["post"]
-    topics = []
+    topics_list = []
     for t in slab_meta.get("topics"):
-        root = t.get("name")
+        root = __get_topic(t.get("id"), topics).get("name")
         try:
-            topics.append(f"{" / ".join([tt.get("name") for tt in t.get("ancestors")])} /  {root}")
+            ancestors = __get_topic_ancestors(t.get("id"), topics)
+            ancestor_names = [ancestor.get("name") for ancestor in ancestors]
+            ancestor_names.reverse()
+            topics_list.append(f"{' / '.join(ancestor_names)} / {root}")
         except: pass
-    # Could get root topic where parent is null in allTopics.  if helpful later
+    # Could get root topic where parent is null in allTopics if helpful later
     metadata  = {
         "document_id": slab_meta.get("id"),
         "title": slab_meta.get("title"),
-        "owner": slab_meta.get("owner").get("name"),
-        "contributors": ", ".join([c.get("name") for c in slab_meta.get("contributors")]),
-        "topics": " ## ".join(topics),
+        "owner": __get_user_info(slab_meta.get("owner").get("id"), users),
+        "contributors": ", ".join([__get_user_info(c.get("id"), users) for c in slab_meta.get("contributors")]),
+        "topics": " ## ".join(topics_list),
         "updated_at": parse_date(slab_meta.get("updatedAt")),
         "created_at": parse_date(slab_meta.get("insertedAt")),
         "slab_type": slab_meta.get("__typename"),
@@ -58,7 +101,7 @@ def __process_slab_docs(doc_file:str, meta_file: str,  semantic_chunker: TextSpl
             idx = 0
             for strc in semantic_chunker.split_text(content):
                 if(len(strc) != 0):
-                    id = f"{metadata["document_id"]}_{idx}"
+                    id = f"{metadata['document_id']}_{idx}"
                     idx += 1
                     docs.append(Document(id=id, page_content=strc, metadata=metadata))
         else:

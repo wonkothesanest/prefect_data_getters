@@ -42,9 +42,10 @@ data_stores = [
         "description": "All Calendar events that have appeared on my calendar."
     }
 ]
-ALL_INDEXES = [d["name"] for d in data_stores]
+ALL_INDEXES = Literal[ [d["name"] for d in data_stores]]
 VECTOR_STORE_NAMES = Literal[
     "email_messages",
+    "email_messages_raw",
     "jira_issues",
     "slab_document_chunks",
     "slab_documents",
@@ -52,3 +53,5 @@ VECTOR_STORE_NAMES = Literal[
     "bitbucket_pull_requests",
     "google_calendar_events",
 ]
+def get_index(index: VECTOR_STORE_NAMES):
+    return str(index)

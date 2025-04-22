@@ -21,7 +21,7 @@ class TestExample(unittest.TestCase):
                 query="lat long",
                 top_k=6,
                 indexes=["slack_messages"],
-                run_llm_reduction=False
+                run_lm_reduction=False
             )
 
             self.assertGreater(len(docs), 0, "Search should return documents.")

@@ -99,45 +99,47 @@ def get_documents(state: AgentState):
     query_prompt = P.query_prompt(f"Find me information on the following OKR: {state["okr"].title} \n {state['okr'].description}")
     query_result = (query_prompt| json_llm).invoke(state)
     query_result = json.loads(query_result.content)
-    llm_reduction = False
+    llm_reduction = True
     jiras, slabs, slacks, emails = [],[],[],[]
 
     for qr in query_result["search_queries"]:
         jiras += asyncio.run(searcher.search(
             query=qr,
-            top_k=50,
+            top_k=20,
             keywords=None,
-            from_date=datetime.now() - timedelta(weeks=12),
+            from_date=datetime.now() - timedelta(weeks=4),
             indexes=['jira_issues'],
             metadata_filter={"project_key": okr.team},
-            run_llm_reduction=llm_reduction
+            run_lm_reduction=llm_reduction
         ))
 
         slabs += asyncio.run(searcher.search(
             query=qr,
             top_k=5,
-            keywords=query_result.get("keywords", None),
+            keywords=None, #query_result.get("keywords", None),
             # from_date=datetime.now() - timedelta(weeks=2),
             indexes=['slab_documents'],
-            run_llm_reduction=llm_reduction
+            run_lm_reduction=llm_reduction
         ))
         emails += asyncio.run(searcher.search(
             query=qr,
             top_k=10,
             keywords=None,
-            from_date=datetime.now() - timedelta(weeks=12),
+            from_date=datetime.now() - timedelta(weeks=4),
             indexes=['email_messages'],
-            run_llm_reduction=llm_reduction
+            run_lm_reduction=llm_reduction
         ))
         slacks += asyncio.run(searcher.search(
             query=qr,
             top_k=10,
             keywords=None,
+            # from_date=datetime.now() - timedelta(weeks=4),
             indexes=['slack_messages'],
-            run_llm_reduction=llm_reduction
+            run_lm_reduction=llm_reduction
         )) 
-
+    
     all_docs =  slabs + jiras + emails + slacks
+    all_docs.sort(key=lambda x: x.search_score, reverse=True)
 
     r = _format_research(all_docs)
     return {'documents': all_docs,
@@ -171,7 +173,7 @@ def document_summarizer(state: AgentState):
                 
                 content_to_use = r if isinstance(r, str) else r.content
 
-                if "OMIT" not in content_to_use:
+                if "OMIT" not in content_to_use[:200]:
                     if len(content_to_use) + len(d.page_content) <= C.DESIRED_DOCUMENT_CHARACTER_LENGTH:
                         content = f"{d.page_content}\nSummary: {content_to_use}"
                     else:
@@ -190,7 +192,7 @@ def report_writer(state: AgentState):
     okr = state["okr"]
     query = state["prompt"]
     prompt = P.report_prompt(query, 
-                             state['research'], 
+                             state['research'][:300000], 
                              state.get("report_history", None)[-1] if state["report_history"] else "")
     result = (prompt | llm).invoke(state)
     return {
@@ -289,7 +291,7 @@ graph = workflow.compile(debug=False)
 
 all_events = []
 all_reports = []
-for okr in OKR.okrs_2025_q1[4:5]:
+for okr in OKR.okrs_2025_q1:
     start_time = datetime.now()
     report = None
     for event in graph.stream({"messages": [], "okr": okr, "prompt": status_update_prompt(okr)}, stream_mode="values"):

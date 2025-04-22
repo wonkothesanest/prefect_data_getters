@@ -11,7 +11,7 @@ class okr:
 okrs_2025_q1 = [
 
     okr(
-        team="",
+        team="ONBRD",
         title="Sigma Visibility into Key Metrics",
         description="Provide the company with visibility into key metrics for onboarding, data acquisition, and client portal through Sigma or the appropriate analytics tool(s)."
     ),
@@ -23,18 +23,6 @@ The Onboarding team's responsibility for this project is to ensure that during o
 without error.  We need to make sure that the Contacts are also synced when onboarding so that Salesforce has a representation of the 
 asset's key contacts. some key phrases that might be linked to this project are "Asset Sync", "Salesforce Service", 
 "contact Sync", "Channel Partner assets", "Hybrid Clients" and "Ticket Service". There has to be special consideration paid to Channel Partner assets and Hybrid Clients
-"""
-    ),
-    okr(
-        team="",
-        title="",
-        description="""
-"""
-    ),
-    okr(
-        team="",
-        title="",
-        description="""
 """
     ),
     okr(

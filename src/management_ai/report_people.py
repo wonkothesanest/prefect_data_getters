@@ -26,6 +26,12 @@ def generate_people_reports_over_time():
     week2 = now - timedelta(weeks=2)
     week3 = now - timedelta(weeks=3)
     week4 = now - timedelta(weeks=4)
+
+    month1 = now - timedelta(weeks=4)
+    month2 = now - timedelta(weeks=8)
+    month3 = now - timedelta(weeks=12)
+    month4 = now - timedelta(weeks=16)
+    month5 = now - timedelta(weeks=20)
     
     dates = [
         (week4, week3),
@@ -33,6 +39,14 @@ def generate_people_reports_over_time():
         (week2, week1),
         (week1, now),
         ]
+    
+    dates = [
+        (month5, month4),
+        (month4, month3),
+        (month3, month2),
+        (month2, month1),
+        (month1, now),
+    ]
     for p in HYPERION:
         person_reports = []
         for start,end in dates:
@@ -57,6 +71,7 @@ Person: {p.first} {p.last}
 
 This short report should have the following sections to it
 * Accomplishments
+* Notable items they have worked on
 * What Problems they've solved
 * Praise Worthy 
 * Concerns
@@ -70,21 +85,21 @@ def _get_documents(p:person,from_date = datetime.now()-timedelta(weeks=2), to_da
     
     jiras = searcher.search_by_username(
         index="jira_issues",
-        username=p.first, 
+        username=f"{p.first} {p.last}", 
         from_date=from_date,
         to_date=to_date,
         size=100
     )
     emails = searcher.search_by_username(
         index="email_messages",
-        username=p.first, 
+        username=f"{p.first} {p.last}", 
         from_date=from_date,
         to_date=to_date,
         size=50
     )
     slacks = searcher.search_by_username(
         index="slack_messages",
-        username=p.first, 
+        username=f"{p.first} {p.last}", 
         from_date=from_date,
         to_date=to_date,
         size=100
@@ -92,7 +107,7 @@ def _get_documents(p:person,from_date = datetime.now()-timedelta(weeks=2), to_da
 
     bbs = searcher.search_by_username(
         index="bitbucket_pull_requests",
-        username=p.first, 
+        username=f"{p.first} {p.last}", 
         from_date=from_date,
         to_date=to_date,
         size=30
@@ -103,4 +118,4 @@ def _get_documents(p:person,from_date = datetime.now()-timedelta(weeks=2), to_da
 
 
 if __name__ == "__main__":
-    generate_people_reports_over_time()
+    generate_people_reports()

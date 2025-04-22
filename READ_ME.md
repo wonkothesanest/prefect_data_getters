@@ -16,6 +16,11 @@ cron setup a process flow for getting slack data
 on slack data store into a vector database
 same store into an elasticsearch db.
 
+What are the ETL steps? 
+Raw, vector store (searchable), processed, query output
+Could use Rabbit MQ for after loading a document add it to the rabbit
+
+
 Note: scripts assume venv dir
 deploy scripts in config dir to /etc/systemd/system/
 run
@@ -35,5 +40,13 @@ For installation you need to run pip install -e . from the base directory (where
 
 TODO List:
 * Make slab auto backup every week
+* Make deployments use the prefect command line interface instead of services. or prefect.yaml
+* apply labels to gmail messages
+* make a robot secratary to make mornings more efficient
+* think about and commit to best structure.
+* decide between n8n and prefect
+
+
+TODONE: 
 * Make gmail backup faster
 * Make Gmail backup more frequent (no dependence on thunderbird?)

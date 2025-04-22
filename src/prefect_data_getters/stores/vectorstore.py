@@ -48,9 +48,9 @@ def batch_process_and_store(documents: list[Document],  vectorstore: Chroma, bat
     """Processes documents in batches and adds them to the vector store."""
     documents = _deduplicate_based_on_id(documents)
     ESVectorStore(vectorstore._collection_name).batch_process_and_store(documents=documents, batch_size=batch_size)
-    for i in range(0, len(documents), batch_size):
-        batch = documents[i:i + batch_size]
-        vectorstore.add_documents(batch)
+    # for i in range(0, len(documents), batch_size):
+    #     batch = documents[i:i + batch_size]
+    #     vectorstore.add_documents(batch)
 
 def _deduplicate_based_on_id(docs: list[Document]) -> list[Document]:
     s = set()
