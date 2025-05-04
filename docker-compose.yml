@@ -24,6 +24,15 @@ services:
       restart: always
       depends_on:
         - elasticsearch
+  mcp-server:
+    image: docker.elastic.co/mcp/mcp-server-elasticsearch:latest
+    container_name: mcp-server
+    environment:
+      - MCP_SERVER_ELASTICSEARCH__ELASTICSEARCH__HOST=http://elasticsearch:9200
+    ports:
+      - "8000:8000"  # MCP server API exposed here
+    depends_on:
+      - elasticsearch
 
 volumes:
   es_data:

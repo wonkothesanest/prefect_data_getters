@@ -10,6 +10,7 @@ HYPERION = [
     person("Adam", "Albaum"),
     person("Eynner","Herrera"),
     person("Suzannah", "Osekowsky"),
+    person("Oscar", "Balandran"),
     person("Mike", "Beenen"),
     person("Chatis", "Santos"),
     person("Burt", "Bielicki"),
@@ -17,6 +18,6 @@ HYPERION = [
     person("Pablo", "Gallego"),
 ]
 
-CLIENT_ENGAGEMENT = HYPERION[3:5]
-DATA_ACQUISITION = HYPERION[0:3]
-ONBOARDING = HYPERION[5:]
+CLIENT_ENGAGEMENT = HYPERION[4:6]
+DATA_ACQUISITION = HYPERION[0:4]
+ONBOARDING = HYPERION[6:]

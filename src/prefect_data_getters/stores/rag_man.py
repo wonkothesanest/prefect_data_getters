@@ -229,10 +229,43 @@ Query to transform: {query}
         return docs
 
 
+    def search_boring_search(
+        self,
+        index: str,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        metadata_filter: Optional[Dict[str, Any]] = None,
+        size: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search documents in Elasticsearch time range, and metadata filter.
+
+        Args:
+            username (str): The username to search for.
+            from_date (datetime, optional): Start date for the range filter. Defaults to None.
+            to_date (datetime, optional): End date for the range filter. Defaults to None.
+            metadata_filter (dict, optional): Metadata filters as key-value pairs. Defaults to None.
+            index (str, optional): Elasticsearch index to search. Defaults to '_all'.
+            size (int, optional): Number of results to return. Defaults to 10.
+
+        Returns:
+            List[Dict[str, Any]]: List of documents matching the query.
+        """
+        return self.search_by_username(
+            index=index,
+            username=None,
+            from_date=from_date,
+            to_date=to_date,
+            metadata_filter=metadata_filter,
+            size=size
+        )
+    
+
+
     def search_by_username(
         self,
         index: str,
-        username: str,
+        username: Optional[str] = None,
         from_date: Optional[datetime] = None,
         to_date: Optional[datetime] = None,
         metadata_filter: Optional[Dict[str, Any]] = None,
@@ -257,21 +290,21 @@ Query to transform: {query}
         # Base search query
         es = Elasticsearch("http://localhost:9200")
         s = Search(using=es, index=selected_store["name"])
-
-        if(index=="email_messages"):
-            s = s.query("match", **{"metadata.from": username})
-        elif(index=="jira_issues"):
-            s = s.query("match", **{"metadata.assignee_displayName": username})
-        elif(index=="slack_messages"):
-            #TODO: add in a search for the user name in any slack mention
-            # Also todo, take the output contexts and merge so there are not a bunch of repeats.
-            s = s.query("match", **{"metadata.user": username})
-        elif(index=="slab_documents" or index=="slab_document_chunks"):
-            s = s.query("match", **{"metadata.owner": username})
-        elif(index=="bitbucket_pull_requests"):
-            s = s.query("match", **{"metadata.all_participants": username})
-        else:
-            raise Exception(f"user search not available for {index}")
+        if(username):
+            if(index=="email_messages"):
+                s = s.query("match", **{"metadata.from": username})
+            elif(index=="jira_issues"):
+                s = s.query("match", **{"metadata.assignee_displayName": username})
+            elif(index=="slack_messages"):
+                #TODO: add in a search for the user name in any slack mention
+                # Also todo, take the output contexts and merge so there are not a bunch of repeats.
+                s = s.query("match", **{"metadata.user": username})
+            elif(index=="slab_documents" or index=="slab_document_chunks"):
+                s = s.query("match", **{"metadata.owner": username})
+            elif(index=="bitbucket_pull_requests"):
+                s = s.query("match", **{"metadata.all_participants": username})
+            else:
+                raise Exception(f"user search not available for {index}")
 
 
         # Add date range filter

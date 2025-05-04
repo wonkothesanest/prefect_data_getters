@@ -7,7 +7,76 @@ class okr:
     def __str__(self):
         return f"OKR Summary:\n  Team: {self.team}\n  Title: {self.title}\n  Description: {self.description}"
     
+okrs_2025_q2 = [
+    okr(
+        team="ONBRD",
+        title="6.10 - 100% of our key services have SLAs and SLA adherence measurement",
+        description="This project focuses on improving the reliability of metadata verification (MDV) by ensuring full metric coverage for all possible failure scenarios, supporting better SLA tracking and adherence across key services.",
+        search_queries=["MDV Hardening SLA coverage"]
+    ),
+    okr(
+        team="INGEST",
+        title="14.20 - Support 5x number of data streams at 5 minute intervals while meeting SLAs",
+        description="Upgrade systems to handle the current asset load and 5x the number of data streams at 5-minute intervals, ensuring system scalability and SLA adherence under increased data throughput.",
+        search_queries=["System upgrade data stream SLA"]
+    ),
+    okr(
+        team="ONBRD",
+        title="18.10 - Move Resi Reporting maturity from a 2 to a 3 on Initiative scorecard by end of Q1 2026",
+        description="Engineering work on VEE backend services to elevate Resi Reporting maturity, aligning with Client Data & Visibility initiative goals.",
+        search_queries=["Resi Reporting VEE backend"]
+    ),
+    okr(
+        team="CLIENT",
+        title="20.30 - Increase Resi & CML Reporting maturity by 0.5 points by EOQ2",
+        description="Centralize and standardize the delivery of field reporting to improve the maturity of Resi and CML reporting by 0.5 points.",
+        search_queries=["Field reporting standardization"]
+    ),
+    okr(
+        team="CLIENT",
+        title="20.60 - Client & Customer Engagement takes over all reporting responsibilities",
+        description="Transition all reporting responsibilities to the Client & Customer Engagement team, improving accountability and streamlining processes.",
+        search_queries=["Client Engagement reporting transition"]
+    ),
+    okr(
+        team="INGEST",
+        title="25.20 - Maintain labor cost associated with MV, PVT, and proactive monitoring (telemetry transition)",
+        description="Transition to using telemetry and production_meter to manage proactive monitoring labor cost for Enphase systems.",
+        search_queries=["Enphase telemetry labor cost"]
+    ),
+    okr(
+        team="INGEST",
+        title="25.30 - Maintain labor cost: Tesla and Q-Cells alerts independent of PV detectors",
+        description="Surface Tesla and Q-Cells battery alerts independent of PV detectors to sustain monitoring labor costs; follow-on to native alerts project.",
+        search_queries=["Tesla Q-Cells battery alert"]
+    ),
+    okr(
+        team="INGEST",
+        title="25.12 - QCells Universal API Upgrade",
+        description="Upgrade QCells to a Universal API, ensuring continued compatibility and cost-effective monitoring; delays could impact client relationships.",
+        search_queries=["QCells API upgrade"]
+    ),
+    okr(
+        team="CLIENT",
+        title="27.20 - Clear customer communication on noncom email outreach",
+        description="Ensure customer communication clearly articulates required actions and expectations during noncompliant email outreach campaigns.",
+        search_queries=["Customer outreach noncom email"]
+    ),
+    okr(
+        team="INGEST",
+        title="31.60 - Improve pipeline coverage ratio from 1.9 to 2.3 via GPM integration",
+        description="Integrate Green Power Monitor to expand commercial opportunities and improve pipeline coverage ratio from 1.9 to 2.3.",
+        search_queries=["GPM integration pipeline ratio"]
+    ),
+    okr(
+        team="CLIENT",
+        title="35.30 - Turn off Home Owner Portal Access",
+        description="Shut down the Home Owner Portal to streamline operations and enhance data security, supporting operational excellence goals.",
+        search_queries=["Home Owner Portal shutdown"]
+    ),
 
+
+]
 okrs_2025_q1 = [
 
     okr(

@@ -291,7 +291,7 @@ graph = workflow.compile(debug=False)
 
 all_events = []
 all_reports = []
-for okr in OKR.okrs_2025_q1:
+for okr in OKR.okrs_2025_q2:
     start_time = datetime.now()
     report = None
     for event in graph.stream({"messages": [], "okr": okr, "prompt": status_update_prompt(okr)}, stream_mode="values"):
@@ -315,11 +315,12 @@ for okr in OKR.okrs_2025_q1:
 # Create a timestamp
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 file_name = f"reporting_{timestamp}.md"
+# Format reports for writing
+formatted_reports = [f"{r['okr']}\n\n{r['report']}" for r in all_reports]
 
-# Open the file in write mode and write the reports
-with open(file_name, "w") as file:
-    for r in all_reports:
-        file.write(f"{r['okr']}\n\n{r['report']}\n=============\n")
+# Write reports to the okr subfolder
+from management_ai.reporting import write_reports
+write_reports(formatted_reports, "OKR_Reports", "okr")
         
 
 # print(all_reports)

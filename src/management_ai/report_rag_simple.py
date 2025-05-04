@@ -28,7 +28,7 @@ def generate_rag_report():
         docs= _get_documents(doc_query),
         report_message= query,
     )
-    write_reports([r], f"adhoc report")
+    write_reports([r], f"adhoc report", "rag")
     
 
 

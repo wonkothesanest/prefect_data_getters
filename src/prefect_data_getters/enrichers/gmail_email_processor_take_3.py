@@ -1,11 +1,23 @@
-from langchain_community.chat_models import ChatOllama
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-from langchain.chains.llm import LLMChain
-from typing import Dict
+"""
+Multi-turn email extraction with one conversation:
+  1) summary          2) categories   3) teams
+  4) projects         5) systems      6) action_items / dates
+  7) rationale        8) importance   9) urgency
+ 10) final JSON merge (parsed & auto-fixed)
 
+Works with any chat-style model; defaults to Ollama’s mistral-nemo.
+"""
+
+from __future__ import annotations
+import datetime as _dt, json, re
+from typing import Dict, List, Any
+
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_ollama import ChatOllama          # local
+# from langchain_openai import ChatOpenAI                       # cloud
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema, OutputFixingParser
+from langchain.prompts import ChatPromptTemplate
 from prefect_data_getters.utilities.timing import time_it
-
 # ────────────────────────── CONSTANT LOOK-UP LISTS ───────────────────────── #
 
 CATEGORIES = ["Account Issues","Team","Collaboration","Interview","Personal Info",
@@ -33,132 +45,154 @@ SYSTEMS    = ["APIs","Asana","Atlassian","Bitbucket","Confluence","Databricks",
               "Jira","LastPass","Okta","Resolv","Salesforce","Service Cloud",
               "Sigma","Slack","Slab","Zendesk"]
 
+# ────────────────────────────── JSON SCHEMA ──────────────────────────────── #
+
+schemas = [
+    ResponseSchema(name="summary",               description="≤2-sentence summary",           type="string"),
+    ResponseSchema(name="categories",            description="array",                         type="array",  items={"type":"string"}),
+    ResponseSchema(name="teams",                 description="array",                         type="array",  items={"type":"string"}),
+    ResponseSchema(name="projects",              description="array",                         type="array",  items={"type":"string"}),
+    ResponseSchema(name="systems",               description="array",                         type="array",  items={"type":"string"}),
+    ResponseSchema(name="action_items",          description="array of strings",              type="array",  items={"type":"string"}),
+    ResponseSchema(name="deadlines_or_dates",    description="array ISO-8601 strings",        type="array",  items={"type":"string"}),
+    ResponseSchema(name="attachments_summary",   description="short string",                  type="string"),
+    ResponseSchema(name="reason",                description="priority rationale",            type="string"),
+    ResponseSchema(name="is_important",          description="boolean",                       type="boolean"),
+    ResponseSchema(name="is_urgent",             description="boolean",                       type="boolean"),
+    ResponseSchema(name="notes_for_memory",      description="array",                         type="array",  items={"type":"string"}),
+]
+
+_struct_parser = StructuredOutputParser.from_response_schemas(schemas)
+_parser        = OutputFixingParser.from_llm(
+                     llm    = ChatOllama(model="mistral-nemo:latest", temperature=0),
+                     parser = _struct_parser,
+                     max_retries = 2
+                 )
+
+FORMAT_INSTRUCTIONS = _struct_parser.get_format_instructions()
+
+# ────────────────────────────── PROCESSOR ────────────────────────────────── #
+
+def _clean_array(text: str) -> List[str]:
+    """Returns [] for 'none/na', else parses JSON or comma-lists."""
+    text   = text.strip()
+    if text.lower() in ("none", "n/a", "na", ""):
+        return []
+    try:
+        # if model already gave JSON array
+        return json.loads(text)
+    except Exception:
+        # fallback: split by comma / newline, strip, dedup
+        items = [re.sub(r'^[\-\*\d\.\s]+', '', t).strip()   # bullet/trailing chars
+                 for t in re.split(r'[\n,]+', text)]
+        return [t for t in dict.fromkeys(items) if t]       # dedup while preserving order
+
 
 class EmailExtractor:
-    def __init__(self, model_name: str = "mistral-nemo:latest", temperature: float = 0.7):
-        self.llm = ChatOllama(model=model_name, temperature=temperature)
-        
-        # Build LangChain chains
-        self.summarization_chain = self._build_summary_chain()
-        self.extraction_chain = self._build_extraction_chain()
+    def __init__(self, model_name: str = "mistral-nemo:latest"):
+        self.llm = ChatOllama(model=model_name, temperature=0)
 
-    def _build_summary_chain(self) -> LLMChain:
-        sys_msg = """
-You are an AI assistant responsible for reviewing incoming emails for me, Dusty Hagstrom, an Engineering Manager. \
-The intent of this categorization and summary
-is to help me prioritize my tasks and manage my time effectively. I need to be able to quickly filter out emails that
-come in as unprompted requests, spam and other irrelevant emails. I need to know about emails that are important to me, my team and my company. 
-Direct emails and ones where I have a specific ask by a client or someone in the company are the most important.
+        self.sys_rules = SystemMessage(content=
+            "You are a meticulous e-mail analyst for Dusty Hagstrom. "
+            "Never guess. If a value is missing, output an empty list [], "
+            "empty string \"\", or false.\n"
+            "Dates MUST be ISO-8601 (YYYY-MM-DD).")
 
-For each email, please provide structured information in the following format. When given a list of options only pick from that list. If any options are None or not applicable, just leave them blank.
+    # ───────────────────── helpers ────────────────────── #
+    def _ask(self, chat: List, ask: str) -> str:
+        """Append a user question, call model, return assistant answer."""
+        chat.append(HumanMessage(content=ask))
+        answer = self.llm.invoke(chat)
+        chat.append(answer)
+        return answer.content.strip()
 
-Categories: Pick only from this list: {CATEGORIES}
-Mentioned Teams: Pick only from this list: {TEAMS}
-Mentioned Projects: Pick only from this list: {PROJECTS}
-Mentioned Systems: Pick only from this list: {SYSTEMS}
-Summary: [Concise 1-2 sentence summary of the email topic]
-Action Items or Requests: [Bullet points describing what is being asked, tasks required, or follow-ups needed, be specific so that it is understandable without the full email]
-Deadlines or Dates: [List explicit deadlines or scheduled dates mentioned]
-Attachments Summary: [If any; e.g. “Excel with monthly metrics”]
-Reason for Importance (or Not): [1 paragraph explaining why Dusty should prioritize or de-prioritize]
-Is Important: [true or false - whether it needs attention by Dusty and is considered important]
-Next Steps: [If any - e.g. respond, delegate, set up meeting, etc.]
-Notes for Memory: [Any relevant context or reference to older threads, status updates, or new metrics that are valuable to remember, be specific so that it is understandable without the full email context]
-
-Example output 
-Categories: Collaboration, Project
-Mentioned Teams: [Data Engineering,Onboarding Team,Product Team]
-Mentioned Projects: [Commercial Ops, VEE Project] 
-Mentioned Systems: [Asana, Jira]
-Summary: John is proposing a planning meeting to finalize the Phase 2 rollout timeline.
-Action Items or Requests:
- - Dusty to confirm availability for Thursday afternoon for the phase 2 rollout timeline.
- - Provide input on the new data ingestion metrics for the phase 2 project by next week.
-Deadlines or Dates:
- - Next Thursday (proposed meeting time)
- - Next week (feedback due)
-Attachments Summary: []
-Reason for Importance:
- This email directly impacts the Phase 2 rollout schedule for the Client Portal, which falls under Dusty’s responsibilities for ensuring data accuracy and timely deployment. Without Dusty’s input, the team risks missing critical integration milestones and stakeholder expectations.
-Is Important: true
-Next Steps:
- - Dusty should respond with availability.
- - Review the data ingestion metrics John provided in the previous email thread.
-Notes for Memory:
- - This meeting is a follow-up to the March 30 conversation regarding Phase 2 of project Orca scope expansion.
- """
-        sys_prompt = SystemMessagePromptTemplate.from_template(sys_msg)
-        prompt = HumanMessagePromptTemplate.from_template("""
-Below is the Email content you need to review and process.
-
-To: {to}
-From: {from_}
-Subject: {subject}
-Email Content:
-{text}
-
-
-""")
-        return LLMChain(llm=self.llm, prompt=ChatPromptTemplate.from_messages([sys_prompt, prompt]))
-    
-
-    def _build_output_parser(self) -> StructuredOutputParser:
-        response_schemas = [
-            ResponseSchema(name="summary", description="Summarize the email in two sentences or less. Be concise."),
-            ResponseSchema(name="categories", description="List of relevant labels (e.g., Project Updates, Client Communication).", type="array", items={"type": "string"}),
-            ResponseSchema(name="is_important", description="Whether the email is important to Dusty.", type="boolean"),
-            ResponseSchema(name="is_urgent", description="Whether it needs a timely response.", type="boolean"),
-            ResponseSchema(name="action_items", description="List of explicit or implicit action items required.", type="array", items={"type": "string"}),
-            ResponseSchema(name="deadlines_or_dates", description="Mentioned dates or time-sensitive references.", type="array", items={"type": "string"}),
-            ResponseSchema(name="attachments_summary", description="Short description of any attachments."),
-            ResponseSchema(name="reason", description="Why Dusty should or should not prioritize this."),
-            ResponseSchema(name="notes_for_memory", description="Context or references for memory.", type="array", items={"type": "string"})
-        ]
-        return StructuredOutputParser.from_response_schemas(response_schemas)
-    
-
-
-    def _build_extraction_chain(self) -> LLMChain:
-        prompt = ChatPromptTemplate.from_template("""
-You are an expert data extraction algorithm.
-Remember that the following are the only acceptable values for categories, teams, projects and systems:
-Categories: Pick only from this list: [Account Issues,Team,Collaboration,Interview,Personal Info,Job Opportunity,Project,Task,Request,Onboarding,Kickoff,Meeting,Technical Issue,Engineering,System Alert,System Update,Error Report,Announcement,Info Sharing,Discussion,Reminder,Survey,Marketing,Event,LinkedIn,Industry News,Security,IT Support,Spam,Unsolicited]
-Teams: Pick only from this list: [Client Team, OCI, Data Acquisition Team, Onboarding Team, AI Team,Accounts Payable,Asset Management,Backend Team,Capital Markets,Client Success,Customer Support,Data Engineering,Data Science,Engineering,Executive Team,Finance,Frontend Team,HR,Legal,Manufacturing,Onboarding Team,Product Team,QA,Sales,Security,Software Engineering,Support Team]
-Projects: Pick only from this list: [2025 Roadmap, BUSA Onboarding, Client Engagement, Clean Power Research, Commercial Ops, Company Initiatives, Data Acquisition, Engineering Roadmap, Hyperion, Metadata Verification, Onboarding, Ops Efficiency & TTR, Residential Ops, Service Cloud Launch, SolCharged Event, VEE Project] 
-Systems: Pick only from this list: [API Integration, Asana, Atlassian, Bitbucket, Confluence, Databricks, Enphase, EverBright, Google Analytics, Green Power Monitor, Jira, LastPass, Okta, Resolv, Salesforce, Service Cloud, Sigma, Slack, Slab, Solar Monitoring System, VEE Ledger, Zendesk]
-
-Extract the following fields strictly in JSON format:
-(summary, categories, reason, is_important, is_urgent, action_items, deadlines_or_dates, attachments_summary, notes_for_memory, next_steps, teams, projects, systems, )
-
-Text to extract from:
-{llm_output}
-""")
-        return LLMChain(llm=self.llm, prompt=prompt, output_parser= self._build_output_parser())
+    # ─────────────────── main entry ───────────────────── #
     @time_it
-    def parse_email(self, email: Dict) -> Dict:
-        """Run summarization + extraction on a single email."""
-        summarized = self.summarization_chain.run(
-            to=email["to"],
-            from_=email["from"],
-            subject=email["subject"],
-            text=email["text"],
-            CATEGORIES=CATEGORIES,
-            TEAMS=TEAMS,        
-            PROJECTS=PROJECTS,
-            SYSTEMS=SYSTEMS,
+    def parse_email(self, email: Dict[str,str]) -> Dict[str,Any]:
+        """
+        email keys: to, from, subject, date (ISO), text
+        Returns: Dict matching schemas list above.
+        """
+        chat: List = [self.sys_rules]
 
+        # ─ 1) SUMMARY ─
+        self._ask(chat,
+            f"Today is {_dt.date.today()}.\n\nHere is the raw e-mail:\n"
+            f"---\n{email['text']}\n---\n\n"
+            "Give ONLY a ≤2-sentence summary.")
+        summary = chat[-1].content
+
+        # ─ 2) CATEGORIES ─
+        cat = self._ask(chat,
+            f"Using that e-mail, list any *Categories* from this whitelist:\n"
+            f"{CATEGORIES}\nReturn [] if none.")
+
+        # ─ 3) TEAMS ─
+        teams = self._ask(chat,
+            f"List *Teams* explicitly mentioned from whitelist {TEAMS}. [] if none.")
+
+        # ─ 4) PROJECTS ─
+        projects = self._ask(chat,
+            f"List *Projects* mentioned from whitelist {PROJECTS}. [] if none.")
+
+        # ─ 5) SYSTEMS ─
+        systems = self._ask(chat,
+            f"List *Systems* mentioned from whitelist {SYSTEMS}. [] if none.")
+
+        # ─ 6) ACTION ITEMS (with dates) ─
+        actions = self._ask(chat,
+            "Extract any action items or tasks (bullet points). "
+            "Embed ISO dates when stated, else omit dates.")
+
+        # ─ 7) DEADLINES / DATES ─
+        deadlines = self._ask(chat,
+            "List all explicit deadlines or calendar dates in the e-mail (ISO). "
+            "[] if none.")
+
+        # ─ 8) RATIONALE ─
+        reason = self._ask(chat,
+            "Why should Dusty prioritise or ignore this e-mail? "
+            "Be concise (≤1 paragraph).")
+
+        # ─ 9) IMPORTANCE / URGENCY ─
+        important = self._ask(chat,
+            "true or false – is this e-mail important to Dusty, does he need to take action or follow up?")
+        urgent    = self._ask(chat,
+            "true or false – does it require response < 24h?")
+
+        # ─10) ATTACH / NOTES ─
+        attach   = self._ask(chat, "Short description of attachments (\"\" if none).")
+        memnotes = self._ask(chat, "Anything worth long-term memory? [] if none.")
+
+        # ─11) FINAL JSON MERGE ─
+        escaped = FORMAT_INSTRUCTIONS.replace("{", "{{").replace("}", "}}")
+        # merge_prompt = ChatPromptTemplate.from_messages([
+        #     ("system", f"Combine everything …\n{escaped}\n\nRemember …"),
+        #     ("user",  "Provide the JSON object now.")
+        # ])
+        raw_json = self._ask(
+            chat,
+            "Now assemble everything you have produced so far into *exactly* "
+            f"this JSON schema:\n{escaped}"
         )
-        
-        extracted_info = self.extraction_chain.run(llm_output=summarized)
-        
-        return {
-            "llm_output": {"text": summarized},
-            "analysis": extracted_info
-        }
+        # raw_json = self.llm.invoke(merge_prompt.format_messages()).content
+        parsed   = _parser.parse(raw_json)
+
+        # the model may have left numeric/boolean strings – quick normalise
+        # parsed["categories"]          = _clean_array(parsed["categories"])
+        # parsed["teams"]               = _clean_array(parsed["teams"])
+        # parsed["projects"]            = _clean_array(parsed["projects"])
+        # parsed["systems"]             = _clean_array(parsed["systems"])
+        # parsed["action_items"]        = _clean_array(parsed["action_items"])
+        # parsed["deadlines_or_dates"]  = _clean_array(parsed["deadlines_or_dates"])
+        # parsed["notes_for_memory"]    = _clean_array(parsed["notes_for_memory"])
+        # parsed["is_important"]        = str(parsed["is_important"]).lower() == "true"
+        # parsed["is_urgent"]           = str(parsed["is_urgent"]).lower()   == "true"
+
+        return parsed
 
 
-
-# # ──────────────────────────────── TESTING ──────────────────────────────── #
+# ─────────────────────────────── Demo ─────────────────────────────── #
 
 if __name__ == "__main__":
     sample = {
@@ -1090,21 +1124,7 @@ wrote:
             """
         )
         }
-    
 
-    sample = {
-        "to":      "dusty@omnidian.com",
-        "from":    "john@example.com",
-        "subject": "Phase-2 Roll-out timeline",
-        "date":    "2025-04-22",
-        "text": (
-            "Hey Dusty,\n\n"
-            "Could you meet next Thursday (2025-04-24) at 14:00 to lock the "
-            "Phase-2 roll-out? I’ll also need your feedback on the new "
-            "ingestion metrics by 2025-05-01.\n\n– John"
-        )
-    }
-    import json
     extractor = EmailExtractor()
     result    = extractor.parse_email(sample)
     print(json.dumps(result, indent=2))

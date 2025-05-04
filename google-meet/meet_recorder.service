@@ -1,0 +1,13 @@
+[Unit]
+Description=Meet Recording Webhook Listener
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/meet_recorder/env/bin/python /opt/meet_recorder/meet_webhook_service.py
+WorkingDirectory=/opt/meet_recorder
+Restart=always
+User=dusty
+
+[Install]
+WantedBy=multi-user.target

@@ -10,7 +10,7 @@ from datetime import datetime
 from prefect_data_getters.stores.documents import SlackMessageDocument
 
 from prefect_data_getters.stores.rag_man import MultiSourceSearcher, extend_slack_message
-import  utilities.constants as C
+import  prefect_data_getters.utilities.constants as C
 class TestExample(unittest.TestCase):
     def setUp(self):
         """Set up the test environment."""

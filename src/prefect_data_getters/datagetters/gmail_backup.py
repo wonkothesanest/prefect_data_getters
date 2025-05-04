@@ -3,7 +3,9 @@ import shutil
 from prefect import flow, task
 from langchain.schema import Document
 from typing import List
-from prefect_data_getters.enrichers.gmail_email_processing_flow import process_emails_by_google_ids
+
+import prefect
+from prefect_data_getters.enrichers.gmail_email_processing_flow import process_emails_by_google_ids, utilize_analysis_flow
 from prefect_data_getters.exporters import add_default_metadata
 from prefect_data_getters.exporters.gmail import process_message
 from prefect_data_getters.stores.elasticsearch import upsert_documents
@@ -81,7 +83,22 @@ def gmail_mbox_backup_flow(days_ago: int=1):
     i=1
     store_documents_in_vectorstore(documents)
 
-    process_emails_by_google_ids(email_ids)
+    
+
+
+@flow(name="Gmail Flow", log_prints=True, )
+def gmail_flow(days_ago: int = 1):
+    """
+    Flow to retrieve and process Gmail messages.
+    """
+    logger = prefect.get_run_logger()
+    # Get messages from the past given number of days
+    email_ids = gmail_mbox_backup_flow(days_ago=days_ago)
+    logger.info(f"Retrieved {len(email_ids)} messages. Processing...")
+    processed_ids = process_emails_by_google_ids(email_ids, overwrite_existing=False)
+    logger.info(f"Processed {len(processed_ids)} emails.")
+    analyized_ids = utilize_analysis_flow(email_ids)
+    logger.info(f"Analyzed {len(analyized_ids)} emails.")
 
 
 # Example usage

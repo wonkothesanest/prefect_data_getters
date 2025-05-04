@@ -62,10 +62,10 @@ class ReportState(TypedDict):
     report_history: Annotated[List[str], operator.add]
 
 # Initialize LLMs
-json_llm = ChatOllama(model="llama3.1", format="json")
-llm = ChatOpenAI(model="gpt-4o")
+# json_llm = ChatOllama(model="llama3.1", format="json")
+llm = ChatOpenAI(model="gpt-4.1")
 #llm = ChatOllama(model="llama3.1", num_ctx=120000)
-doc_reviewer_llm = ChatOllama(model="llama3.1", num_ctx=120000)
+doc_reviewer_llm = ChatOpenAI(model="gpt-4.1-nano") #ChatOllama(model="mistral-nemo:latest", num_ctx=120000)
 
 
 searcher = MultiSourceSearcher()
@@ -118,20 +118,45 @@ def run_report(docs: list[_AIDocument], report_message: str) -> str:
             pass
     return report
 
-def write_reports(all_reports: list, report_title: str):
-
-    # print(all_events)
-
+def write_reports(all_reports: list, report_title: str, report_type: str = "general"):
+    """
+    Write reports to the appropriate subfolder in the reports directory.
+    
+    Args:
+        all_reports: List of report strings to write
+        report_title: Title of the report
+        report_type: Type of report (okr, people, rag, secretary, or general)
+    """
     # Create a timestamp
     report_title_f = report_title.lower().replace(" ", "_")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_name = f"reporting_{report_title_f}_{timestamp}.md"
+    
+    # Determine the appropriate subfolder
+    if report_type == "okr":
+        subfolder = "reports/okr"
+    elif report_type == "people":
+        subfolder = "reports/people"
+    elif report_type == "rag":
+        subfolder = "reports/rag"
+    elif report_type == "secretary":
+        subfolder = "reports/secretary"
+    else:
+        subfolder = "reports/general"
+    
+    # Create the subfolder if it doesn't exist
+    import os
+    os.makedirs(subfolder, exist_ok=True)
+    
+    # Create the file path
+    file_name = f"{subfolder}/reporting_{report_title_f}_{timestamp}.md"
 
     # Open the file in write mode and write the reports
     with open(file_name, "w") as file:
         file.write(f"{report_title}\n\n")
         for r in all_reports:
             file.write(f"{r}\n=============\n")
+    
+    print(f"Report saved to {file_name}")
 
 #################### NODES ##########################
 def _format_research(all_docs: list):

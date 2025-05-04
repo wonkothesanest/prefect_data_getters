@@ -8,3 +8,4 @@ scratch/
 /reporting*.md
 *egg-info*
 secrets/
+reports/

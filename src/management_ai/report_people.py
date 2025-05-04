@@ -10,12 +10,13 @@ searcher = MultiSourceSearcher()
 def generate_people_reports():
     """ Main function to generate bi weekly reports."""
     all_reports = []
-    for p in HYPERION:
+    #  for p in HYPERION:
+    for p in [person("Karen", "Schlesinger")]:
         all_reports.append( run_report(
             docs=_get_documents(p),
             report_message=_get_report_query(p),
         ))
-    write_reports(all_reports, "people")
+    write_reports(all_reports, f"People from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} {p.first}", "people")
 
 
 def generate_people_reports_over_time():
@@ -59,8 +60,8 @@ def generate_people_reports_over_time():
             all_reports.append(r)
             person_reports.append(r)
 
-        write_reports(person_reports, f"People  from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} {p.first}")
-    write_reports(all_reports, f"People  from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} all")
+        write_reports(person_reports, f"People from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} {p.first}", "people")
+    write_reports(all_reports, f"People from {dates[0][0].strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} all", "people")
     
 def _get_report_query(p: person):
     return f"""
