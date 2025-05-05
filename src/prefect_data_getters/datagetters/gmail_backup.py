@@ -82,6 +82,7 @@ def gmail_mbox_backup_flow(days_ago: int=1):
     documents = process_messages(messages)
     i=1
     store_documents_in_vectorstore(documents)
+    return email_ids
 
     
 

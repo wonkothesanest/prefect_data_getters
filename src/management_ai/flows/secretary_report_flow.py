@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from prefect import flow, task
+from prefect.artifacts import create_markdown_artifact
 import sys
 import os
 
@@ -124,11 +125,21 @@ def secretary_report_flow(workdays_back: int = 2):
         report_message=query,
     )
     
-    # Write report
+    # Create report title
+    report_title = f"Secretary notes from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}"
+    
+    # Write report to file
     write_reports(
-        [report], 
-        f"Secretary notes from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}", 
+        [report],
+        report_title,
         "secretary"
+    )
+    
+    # Store report as a Prefect artifact
+    create_markdown_artifact(
+        markdown=report,
+        key="secretary-report",
+        description=f"Secretary report from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}"
     )
     
     return "Secretary report generated successfully"
