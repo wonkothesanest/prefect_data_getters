@@ -88,7 +88,7 @@ def gmail_mbox_backup_flow(days_ago: int=1):
 
 
 @flow(name="Gmail Flow", log_prints=True, )
-def gmail_flow(days_ago: int = 1):
+def gmail_flow(days_ago: int = 3):
     """
     Flow to retrieve and process Gmail messages.
     """
@@ -104,4 +104,4 @@ def gmail_flow(days_ago: int = 1):
 
 # Example usage
 if __name__ == "__main__":
-    gmail_mbox_backup_flow(days_ago=10)
+    gmail_flow(days_ago=1)

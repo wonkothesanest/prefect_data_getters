@@ -38,11 +38,21 @@ def authenticate_gmail():
     
     # If there are no valid credentials available, let the user log in.
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(creds_path, SCOPES)
-            creds = flow.run_local_server(port=8080, access_type='offline')
+        try:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+        except Exception as e:
+            print(f"Error refreshing credentials: {e}")
+            creds = None
+        finally:
+            if(creds is None):
+                # If there are no (valid) credentials available, let the user log in.
+                print("No valid credentials found. Please log in.")
+                if not os.path.exists(creds_path):
+                    raise FileNotFoundError(f"Credentials file not found: {creds_path}")
+                flow = InstalledAppFlow.from_client_secrets_file(creds_path, SCOPES)
+                creds = flow.run_local_server(port=8080, access_type='offline')
+        
         # Save the credentials for the next run
         with open(token_path, "wb") as token:
             pickle.dump(creds, token)

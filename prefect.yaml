@@ -234,7 +234,7 @@ deployments:
     work_queue_name: default
     job_variables: {}
   schedules:
-  - cron: 0 9 * * 1    # Every Monday at 9 AM
+  - cron: 0 9 * * 4    # Every Thursday at 9 AM
     timezone:
     day_or: true
     active: true
@@ -258,7 +258,7 @@ deployments:
     work_queue_name: default
     job_variables: {}
   schedules:
-  - cron: 0 9 * * 5    # Every Friday at 9 AM
+  - cron: 0 9 * * 3    # Every Wednesday at 9 AM
     timezone:
     day_or: true
     active: true
@@ -280,13 +280,7 @@ deployments:
     name: default
     work_queue_name: default
     job_variables: {}
-  schedules:
-  - cron: 0 12 * * 3    # Every Wednesday at 12 PM
-    timezone:
-    day_or: true
-    active: false    # Disabled by default since it's meant for ad-hoc use
-    max_active_runs:
-    catchup: false
+  schedules: []
   enforce_parameter_schema: true
 
   # Secretary Report Flow

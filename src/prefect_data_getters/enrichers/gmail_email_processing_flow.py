@@ -18,7 +18,8 @@ def check_existing_ids(email_ids: List[str]) -> List[str]:
     """Query Elasticsearch to find already-processed email IDs."""
     response = es_client.search(
         index="email_messages_llm_processed",
-        query={"ids": {"values": email_ids}}
+        query={"ids": {"values": email_ids}},
+        size=len(email_ids),
     )
     existing_ids = [hit["_id"] for hit in response["hits"]["hits"]]
     return existing_ids
@@ -53,7 +54,7 @@ def process_email_and_upsert(email: Dict) -> Dict:
         processed["google-id"] = email["google-id"]
         processed["date"] = parse_date(email["date"])
         processed["date_processed"] = datetime.now().isoformat()
-        processed["email_content"] = {"from": email["from"], "to": email["to"], "subject": email["subject"], "text": email["text"], "date": parse_date(email["date"])}
+        processed["email_content"] = {"from": email.get("from"), "to": email.get("to"), "subject": email.get("subject"), "text": email.get("text"), "date": parse_date(email["date"])}
         upsert_documents([processed], "email_messages_llm_processed", "google-id")
         
         return processed
@@ -99,6 +100,7 @@ def process_emails_by_google_ids(google_ids: Optional[List[str]] | None = None, 
         except Exception as e:
             logger.error(f"Error processing email {email['google-id']}: {e}")
             continue
+    return email_ids
 
 
 @flow
@@ -116,6 +118,7 @@ def utilize_analysis_flow(email_ids: List[str]):
         utilize_analysis(email_id, analysis)
         logger.debug(f"Utilized analysis for email {email_id}.")
     logger.info(f"Finished utilizing analysis for all emails in batch of len {len(email_ids)}.")
+    return email_ids
 
 if __name__ == "__main__":
     # <<< RUN THIS FUNCTION LOCALLY >>>

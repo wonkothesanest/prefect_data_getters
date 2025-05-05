@@ -7,26 +7,27 @@ from prefect_data_getters.utilities.people import HYPERION,person
 from prefect_data_getters.utilities.timing import print_human_readable_delta
 
 searcher = MultiSourceSearcher()
-def generate_people_reports():
+def generate_secratary_report(days_ago: int = 2):
     """ Main function to generate bi weekly reports."""
-    all_reports = []
     #  for p in HYPERION:
-    all_reports.append( run_report(
-        docs=_get_documents(),
+    start_date = get_workdays_ago(days_ago)
+    report = run_report(
+        docs=_get_documents(from_date=start_date, to_date=datetime.now()),
         report_message=_get_report_query(),
-    ))
-    def get_workdays_ago(days):
-        current_date = datetime.now()
-        workdays_count = 0
-        while workdays_count < days:
-            current_date -= timedelta(days=1)
-            if current_date.weekday() < 5:  # Monday to Friday are considered workdays
-                workdays_count += 1
-        return current_date
+    )
+    write_reports([report], f"Secretary notes from {(start_date).strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}", "secretary")
+    return report
+
+
+def get_workdays_ago(days):
+    current_date = datetime.now()
+    workdays_count = 0
+    while workdays_count < days:
+        current_date -= timedelta(days=1)
+        if current_date.weekday() < 5:  # Monday to Friday are considered workdays
+            workdays_count += 1
+    return current_date
     
-    write_reports(all_reports, f"Secretary notes from {(get_workdays_ago(2)).strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}", "secretary")
-
-
 def _get_report_query():
     return f"""
 You are my secratary and I need you to do exhaustive research about the past 48 hours.
@@ -105,4 +106,4 @@ def _get_documents(from_date = datetime.now()-timedelta(days=2), to_date=datetim
 
 
 if __name__ == "__main__":
-    generate_people_reports()
+    generate_secratary_report()
