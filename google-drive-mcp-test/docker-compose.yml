@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  gdrive-mcp:
+    image: node:18-alpine
+    container_name: gdrive-mcp
+    working_dir: /app
+    command: >
+      sh -c "npm install -g @modelcontextprotocol/server-gdrive &&
+             npx @modelcontextprotocol/server-gdrive"
+    volumes:
+      - ./credentials:/app/credentials
+    environment:
+      - NODE_ENV=production
+      - GDRIVE_OAUTH_PORT=3000
+      - GDRIVE_CREDENTIALS_PATH=/app/credentials/gcp-oauth.keys.json
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    network_mode: "host"  # Important for OAuth redirect to work properly
+
+  python-client:
+    image: python:3.10-slim
+    container_name: gdrive-python-client
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - gdrive-mcp
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             python gdrive_query.py test"
