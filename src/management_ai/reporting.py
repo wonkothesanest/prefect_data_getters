@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 from typing import Annotated, Any, List
+import os
 
 from prefect_data_getters.stores.documents import _AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
@@ -61,14 +62,28 @@ class ReportState(TypedDict):
     report: str
     report_history: Annotated[List[str], operator.add]
 
+
+#TODO: move these to not globals, they need to initialize after the environment is set up
+llm = None
+doc_reviewer_llm = None
+searcher = None
+
 # Initialize LLMs
-# json_llm = ChatOllama(model="llama3.1", format="json")
-llm = ChatOpenAI(model="gpt-4.1")
-#llm = ChatOllama(model="llama3.1", num_ctx=120000)
-doc_reviewer_llm = ChatOpenAI(model="gpt-4.1-nano") #ChatOllama(model="mistral-nemo:latest", num_ctx=120000)
+def _initialize():
+    global llm
+    global doc_reviewer_llm
+    global searcher
 
+    # Check if OPENAI_API_KEY is set in the environment
+    if "OPENAI_API_KEY" not in os.environ:
+        raise ValueError("OPENAI_API_KEY environment variable is not set. Please run setup_environment() first.")
 
-searcher = MultiSourceSearcher()
+    # json_llm = ChatOllama(model="llama3.1", format="json")
+    llm = ChatOpenAI(model="gpt-4.1")
+    #llm = ChatOllama(model="llama3.1", num_ctx=120000)
+    doc_reviewer_llm = ChatOpenAI(model="gpt-4.1-nano") #ChatOllama(model="mistral-nemo:latest", num_ctx=120000)
+    searcher = MultiSourceSearcher()
+
 
 # ====== FUNCTIONS ======
 """
@@ -86,6 +101,7 @@ Linear flow
 """
 @time_it
 def run_report(docs: list[_AIDocument], report_message: str) -> str:
+    _initialize()
     # Setup state
     state = ReportState()
     state["documents"] = docs
@@ -144,7 +160,6 @@ def write_reports(all_reports: list, report_title: str, report_type: str = "gene
         subfolder = "reports/general"
     
     # Create the subfolder if it doesn't exist
-    import os
     os.makedirs(subfolder, exist_ok=True)
     
     # Create the file path

@@ -2,9 +2,7 @@ from prefect.client.orchestration import get_client
 from prefect.client.schemas.sorting import FlowRunSort
 from prefect.client.schemas.filters import FlowFilter, FlowFilterName, FlowRunFilter, FlowRunFilterState, FlowRunFilterStateName
 from prefect.states import Completed
-
-
-
+from prefect.blocks.system import Secret
 
 
 def get_last_successful_flow_run_timestamp(flow_name: str):

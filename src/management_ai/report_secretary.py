@@ -2,9 +2,6 @@ from datetime import datetime, timedelta
 from prefect_data_getters.stores.rag_man import MultiSourceSearcher
 from management_ai.reporting import run_report, write_reports
 
-from prefect_data_getters.utilities.people import HYPERION,person
-
-from prefect_data_getters.utilities.timing import print_human_readable_delta
 
 searcher = MultiSourceSearcher()
 def generate_secratary_report(days_ago: int = 2):

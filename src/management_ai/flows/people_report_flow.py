@@ -8,7 +8,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from prefect_data_getters.utilities.people import HYPERION, person
 from management_ai.reporting import run_report, write_reports
-from prefect_data_getters.utilities.timing import print_human_readable_delta
 
 @task
 def get_documents(p, from_date, to_date):
@@ -44,6 +43,7 @@ def people_report_flow(
         person_name: Name of specific person to generate report for (default: "", which means all people)
         all_people: Whether to generate reports for all people (default: False)
     """
+    
     now = datetime.now()
     from_date = now - timedelta(weeks=weeks_back)
     to_date = now

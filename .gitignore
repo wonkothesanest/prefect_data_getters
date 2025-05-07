@@ -10,3 +10,4 @@ scratch/
 secrets/
 reports/
 google-drive-mcp-test/credentials/gcp-oauth.keys.json
+.env
