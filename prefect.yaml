@@ -53,7 +53,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 */3 * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs: 1
@@ -92,7 +92,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 */3 * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -113,7 +113,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 */12 * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -134,7 +134,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 * * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -170,7 +170,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 30 */2 * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -191,7 +191,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 */2 * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -213,7 +213,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 */3 * * *
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -235,7 +235,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 9 * * 4    # Every Thursday at 9 AM
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -259,7 +259,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 9 * * 3    # Every Wednesday at 9 AM
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
@@ -298,7 +298,7 @@ deployments:
     job_variables: {}
   schedules:
   - cron: 0 8 * * 1-5    # Every weekday at 8 AM
-    timezone:
+    timezone: America/Denver
     day_or: true
     active: true
     max_active_runs:
