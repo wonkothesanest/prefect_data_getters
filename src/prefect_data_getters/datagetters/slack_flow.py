@@ -24,6 +24,8 @@ def perform_backup(token, start_timestamp=None, cookie=None, public_channels:lis
         start_from_timestamp=start_timestamp,
         cookie=cookie,
         public_channels=public_channels,
+        exclude_non_member=True,
+        exclude_archived=True,
     )
     return backup_directory
 

@@ -401,8 +401,8 @@ def bootstrapKeyValues(slack, suppliedChannels=None, suppliedGroups=None, oldest
 
     if suppliedChannels is not None:
         channels = list(filter(lambda obj: obj["name"] in suppliedChannels, channels))
-    else:
-        channels = list(filter(lambda obj: obj["is_member"], channels))
+    # else:
+    #     channels = list(filter(lambda obj: obj["is_member"], channels))
     
     print("Found {0} Public Channels".format(len(channels)))
 
