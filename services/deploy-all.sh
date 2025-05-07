@@ -16,10 +16,10 @@ for service_file in "$SERVICES_DIR"/*.service; do
     sudo systemctl enable "$service_name"
 
     # Start the service
-    sudo systemctl restart "$service_name"
+    sudo systemctl start "$service_name"
 
     # Check the service status
-    sudo systemctl status "$service_name" --no-pager
+    # sudo systemctl status "$service_name" --no-pager
 done
 
 echo ""
