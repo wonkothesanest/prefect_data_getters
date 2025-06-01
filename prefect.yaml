@@ -27,6 +27,8 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
+
   description: Process emails by Google IDs
   entrypoint: 
     src/prefect_data_getters/enrichers/gmail_email_processing_flow.py:process_emails_by_google_ids
@@ -42,7 +44,8 @@ deployments:
 - name: Gmail Flow
   version:
   tags: [gmail]
-  concurrency_limit: 1
+  concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Process all new emails
   entrypoint: 
     src/prefect_data_getters/datagetters/gmail_backup.py:gmail_flow
@@ -65,6 +68,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Utilize the analysis from processed emails
   entrypoint: 
     src/prefect_data_getters/enrichers/gmail_email_processing_flow.py:utilize_analysis_flow
@@ -81,6 +85,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Backup Google Calendar events
   entrypoint: 
     src/prefect_data_getters/datagetters/google_calendar_backup.py:google_calendar_backup_flow
@@ -104,6 +109,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Backup Slab documents
   entrypoint: src/prefect_data_getters/datagetters/slab_backup.py:slab_backup_flow
   parameters: {}
@@ -125,6 +131,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Backup Slack messages
   entrypoint: src/prefect_data_getters/datagetters/slack_flow.py:slack_backup_flow
   parameters: {}
@@ -146,6 +153,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Backup Gmail messages
   entrypoint: src/prefect_data_getters/datagetters/gmail_backup.py:gmail_mbox_backup_flow
   parameters:
@@ -160,6 +168,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Retrieve, process, and analyze Gmail messages
   entrypoint: src/prefect_data_getters/datagetters/gmail_backup.py:gmail_flow
   parameters:
@@ -182,6 +191,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Backup Jira issues
   entrypoint: src/prefect_data_getters/datagetters/jira_backup.py:jira_backup_flow
   parameters: {}
@@ -203,6 +213,7 @@ deployments:
   version:
   tags: []
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Backup Bitbucket pull requests
   entrypoint: 
     src/prefect_data_getters/datagetters/bitbucket_backup.py:bitbucket_pr_backup_flow
@@ -225,6 +236,7 @@ deployments:
   version:
   tags: [report, okr, ai]
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Generate OKR (Objectives and Key Results) reports
   entrypoint: src/management_ai/flows/okr_report_flow.py:okr_report_flow
   parameters:
@@ -247,6 +259,7 @@ deployments:
   version:
   tags: [report, people, ai]
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Generate reports about team members' activities
   entrypoint: src/management_ai/flows/people_report_flow.py:people_report_flow
   parameters:
@@ -271,6 +284,7 @@ deployments:
   version:
   tags: [report, rag, ai]
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Generate ad-hoc reports using Retrieval Augmented Generation
   entrypoint: src/management_ai/flows/rag_report_flow.py:rag_report_flow
   parameters:
@@ -288,6 +302,7 @@ deployments:
   version:
   tags: [report, secretary, ai]
   concurrency_limit:
+    collision_strategy: CANCEL_NEW
   description: Generate secretary-style notes about recent activities
   entrypoint: src/management_ai/flows/secretary_report_flow.py:secretary_report_flow
   parameters:

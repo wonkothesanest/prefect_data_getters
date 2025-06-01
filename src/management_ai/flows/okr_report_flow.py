@@ -5,6 +5,7 @@ import os
 
 # Add the parent directory to the path so we can import from management_ai
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from prefect.artifacts import create_markdown_artifact
 
 from management_ai.agents.report_template_okrs import okrs_2025_q2
 from management_ai.reporting import write_reports
@@ -43,8 +44,16 @@ def okr_report_flow(quarter: str = "current"):
     # For now, we'll just use the Q2 2025 OKRs
     
     all_reports = []
+    i = 0
     for okr in okrs_2025_q2:
+        i += 1
         report_result = run_okr_report(okr)
+
+        create_markdown_artifact(
+            markdown=report_result["report"],
+            key=f"okr-report-{i}",
+            description=f"OKR on {datetime.now().strftime('%Y-%m-%d')} for {okr}",
+        )
         all_reports.append(report_result)
     
     # Format reports for writing
@@ -53,6 +62,11 @@ def okr_report_flow(quarter: str = "current"):
     # Write reports to the okr subfolder
     write_reports(formatted_reports, "OKR_Reports", "okr")
     
+    create_markdown_artifact(
+        markdown=formatted_reports,
+        key="okr-report",
+        description=f"OKR from {datetime.now().strftime('%Y-%m-%d')} for {okr}",
+    )
     return "OKR reports generated successfully"
 
 if __name__ == "__main__":

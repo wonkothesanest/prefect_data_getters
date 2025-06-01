@@ -11,12 +11,17 @@ import asyncio
 searcher = MultiSourceSearcher()
 
 query = """
-I want a detailed list of jira tasks and the epic details I need to create
-in order to accomplish what we need to do for the onboarding asset sync process
-that we are doing to move from Zendesk to Sales Force Service cloud
+For the metadata verification (MDV) hardening project, please provide a summary of the current status, including any issues or challenges faced, and the next steps to be taken. Include any relevant information from the following sources: email messages, Jira issues, Slack messages, and Slab documents.
+The report should be concise and focused on the MDV hardening project, highlighting key points and actionable items. Please ensure that the information is up-to-date and relevant to the current state of the project.
+The report should be structured as follows:
+1. Project Overview
+2. Current Status
+3. Issues and Challenges
+4. Next Steps
+5. Milestones and Deadlines
 """
 doc_query = """
-Zendesk to Sales Force Service Cloud asset and contact sync
+Metadata Verification (MDV).
 """
 
 
@@ -36,8 +41,10 @@ def _get_documents(document_query):
 
     all_docs = asyncio.run( searcher.search(
         query=document_query,
-        indexes=C.ALL_INDEXES,
-        top_k=10
+        indexes=C.ALL_INDEX_LIST[:-1],
+        from_date=datetime.now() - timedelta(weeks=6),
+        to_date=datetime.now(),
+        top_k=50
     ))
     all_docs.sort(key=lambda x: x.search_score, reverse=True)
     return all_docs[:15]

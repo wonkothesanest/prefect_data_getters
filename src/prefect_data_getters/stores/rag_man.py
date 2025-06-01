@@ -159,6 +159,7 @@ Query to transform: {query}
             }
         } if from_date or to_date else None
 
+
         # Build metadata filter for Elasticsearch, if metadata_filter is provided
         metadata_filter_query = {
             "bool": {

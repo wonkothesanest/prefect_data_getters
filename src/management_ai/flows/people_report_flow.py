@@ -5,6 +5,7 @@ import os
 
 # Add the parent directory to the path so we can import from management_ai
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from prefect.artifacts import create_markdown_artifact
 
 from prefect_data_getters.utilities.people import HYPERION, person
 from management_ai.reporting import run_report, write_reports
@@ -49,23 +50,33 @@ def people_report_flow(
     to_date = now
     
     all_reports = []
-    
+    is_individual = False
     if person_name and person_name.strip() and not all_people:
-        # Generate report for a specific person
-        for p in HYPERION:
-            if p.first.lower() == person_name.lower() or f"{p.first} {p.last}".lower() == person_name.lower():
-                report = generate_person_report(p, from_date, to_date)
-                all_reports.append(report)
-                break
-    else:
-        # Generate reports for all people
-        for p in HYPERION:
-            report = generate_person_report(p, from_date, to_date)
-            all_reports.append(report)
+        is_individual = True
     
+    # Generate report for a specific person
+    for p in HYPERION:
+        # if given a single person, check if the name matches, else just do it!
+        if not is_individual or (is_individual and (p.first.lower() == person_name.lower() or f"{p.first} {p.last}".lower() == person_name.lower())):
+            report = generate_person_report(p, from_date, to_date)
+
+            create_markdown_artifact(
+                markdown=report,
+                key=f"people-report-individual-{p.first.lower()}-{p.last.lower()}",
+                description=f"{p.first} {p.last} Report from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}"
+            )
+            all_reports.append(report)
+
     # Write individual reports
     if all_reports:
         write_reports(all_reports, f"People from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}", "people")
+
+        # Store report as a Prefect artifact
+        create_markdown_artifact(
+            markdown=all_reports,
+            key="people-report",
+            description=f"People from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}"
+        )
     
     return "People reports generated successfully"
 

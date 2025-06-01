@@ -42,6 +42,7 @@ data_stores = [
         "description": "All Calendar events that have appeared on my calendar."
     }
 ]
+ALL_INDEX_LIST = [d["name"] for d in data_stores]
 ALL_INDEXES = Literal[ [d["name"] for d in data_stores]]
 VECTOR_STORE_NAMES = Literal[
     "email_messages",

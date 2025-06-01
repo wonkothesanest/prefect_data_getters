@@ -40,13 +40,15 @@ For installation you need to run pip install -e . from the base directory (where
 
 TODO List:
 * Make slab auto backup every week
-* Make deployments use the prefect command line interface instead of services. or prefect.yaml
-* apply labels to gmail messages
-* make a robot secratary to make mornings more efficient
 * think about and commit to best structure.
-* decide between n8n and prefect
+* Make ability to chat with MCP'd or tool'd interface (let chat bot query)
+* more post processing for slack, usernames, fill in text "ats" @ (parent user names?), Add username to beginning of message (for full text search?)
 
 
 TODONE: 
 * Make gmail backup faster
 * Make Gmail backup more frequent (no dependence on thunderbird?)
+* Make deployments use the prefect command line interface instead of services. or prefect.yaml
+* apply labels to gmail messages
+* make a robot secratary to make mornings more efficient
+* decide between n8n and prefect
