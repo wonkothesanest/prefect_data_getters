@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 from prefect import flow, task
-from prefect.blocks.system import Secret
-from atlassian.bitbucket import Cloud
 from langchain.schema import Document
 from prefect_data_getters.exporters.jira import get_bitbucket_client, format_pull_request_to_document
 from prefect_data_getters.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb

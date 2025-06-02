@@ -1,12 +1,8 @@
 from prefect import flow, task
-from prefect.blocks.system import Secret
-from atlassian import Jira
 from langchain.schema import Document
 from typing import List
 from prefect_data_getters.exporters import add_default_metadata
-import prefect_data_getters.utilities.constants as C  
-from prefect_data_getters.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb, ESVectorStore
-from datetime import datetime
+from prefect_data_getters.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
 from prefect_data_getters.exporters.jira import get_jira_client, format_issue_to_document 
 
 @task

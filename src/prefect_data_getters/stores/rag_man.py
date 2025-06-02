@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from prefect_data_getters.stores.documents import _AIDocument, SlackMessageDocument, convert_documents_to_ai_documents
+from prefect_data_getters.stores.documents import AIDocument, SlackMessageDocument, convert_documents_to_ai_documents
 from typing import List
 from typing import List, Literal, Optional, Annotated
 from datetime import datetime
@@ -134,7 +134,7 @@ Query to transform: {query}
         indexes: Annotated[Optional[List[str]], "List of specific vector store names to search"] = None,
         metadata_filter: Annotated[Optional[dict], "Metadata filters as key-value pairs"] = None,
         run_lm_reduction: Annotated[Optional[bool], "Whether to use ML reduction on the results"] = False,
-    ) -> List[_AIDocument]:
+    ) -> List[AIDocument]:
         """
         Perform a multi-source search with keyword and embedding filters, optional date range, and LLM reduction.
 
@@ -391,9 +391,9 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 
 def extend_slack_messages(
-    slack_messages: list[_AIDocument],
+    slack_messages: list[AIDocument],
     minutes_before_after: int = 120
-) -> list[_AIDocument]:
+) -> list[AIDocument]:
     """
     Process a list of SlackMessageDocuments by:
     1. Deduplicating by thread_ts (if present) or by ts if not.
@@ -520,10 +520,10 @@ def extend_slack_messages(
 
 
 def _extend_slack_message(
-    slack_message: _AIDocument, 
+    slack_message: AIDocument, 
     from_time: datetime = None, 
     to_time: datetime = None
-) -> _AIDocument:
+) -> AIDocument:
     """
     Internal function to extend a Slack message by retrieving related context messages from the same channel.
     If it's part of a thread, retrieves all messages from the thread.

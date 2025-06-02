@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Any, List
 
-from prefect_data_getters.stores.documents import _AIDocument
+from prefect_data_getters.stores.documents import AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
 from prefect_data_getters.utilities.constants import data_stores
 from langchain.schema import Document
@@ -59,7 +59,7 @@ class AgentState(TypedDict):
     template: str
     okr: OKR.okr
     research: str
-    documents: List[_AIDocument]
+    documents: List[AIDocument]
     report: str
     report_history: Annotated[List[str], operator.add]
 
@@ -152,7 +152,7 @@ def document_summarizer(state: AgentState):
     batch_size = 5  # Number of parallel requests
     llm_results = []
 
-    def process_document(d: _AIDocument):
+    def process_document(d: AIDocument):
         """Process a single document with the LLM."""
         if(len(str(d)) > C.DESIRED_DOCUMENT_CHARACTER_LENGTH):
             p = P.summarization_prompt(

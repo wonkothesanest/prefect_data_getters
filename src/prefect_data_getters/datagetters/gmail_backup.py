@@ -1,20 +1,16 @@
-import os
-import shutil
 from prefect import flow, task
 from langchain.schema import Document
 from typing import List
 
 import prefect
 from prefect_data_getters.enrichers.gmail_email_processing_flow import process_emails_by_google_ids, utilize_analysis_flow
-from prefect_data_getters.exporters import add_default_metadata
 from prefect_data_getters.exporters.gmail import process_message
 from prefect_data_getters.stores.elasticsearch import upsert_documents
 from prefect_data_getters.utilities import constants as C  
 from prefect_data_getters.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
-from langchain_community.vectorstores.utils import filter_complex_metadata
 from prefect.artifacts import create_markdown_artifact
 
-from prefect_data_getters.exporters.gmail import get_messages_by_query, parse_date
+from prefect_data_getters.exporters.gmail import parse_date
 from prefect_data_getters.exporters.gmail import get_email_body
 
 import os

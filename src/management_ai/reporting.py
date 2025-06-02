@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Annotated, Any, List
 import os
 
-from prefect_data_getters.stores.documents import _AIDocument
+from prefect_data_getters.stores.documents import AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
 from prefect_data_getters.utilities.constants import VECTOR_STORE_NAMES, data_stores
 from langchain.schema import Document
@@ -55,7 +55,7 @@ from prefect_data_getters.utilities.timing import print_human_readable_delta, ti
 class ReportState(TypedDict):
     # The annotation tells the graph that new messages will always
     # be added to the current states
-    documents: List[_AIDocument]
+    documents: List[AIDocument]
     report_message: str
     messages: Annotated[Sequence[BaseMessage], operator.add]
     research: str
@@ -100,7 +100,7 @@ Linear flow
 
 """
 @time_it
-def run_report(docs: list[_AIDocument], report_message: str) -> str:
+def run_report(docs: list[AIDocument], report_message: str) -> str:
     _initialize()
     # Setup state
     state = ReportState()
@@ -192,7 +192,7 @@ def document_summarizer(state: ReportState):
     batch_size = 1  # Number of parallel requests
     llm_results = []
 
-    def process_document(d: _AIDocument):
+    def process_document(d: AIDocument):
         """Process a single document with the LLM."""
         if(len(str(d)) > C.DESIRED_DOCUMENT_CHARACTER_LENGTH):
             p = P.summarization_prompt(

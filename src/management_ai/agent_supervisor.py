@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from prefect_data_getters.stores.documents import _AIDocument
+from prefect_data_getters.stores.documents import AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
 from prefect_data_getters.utilities.constants import data_stores
 from langchain.schema import Document
@@ -121,7 +121,7 @@ Return the top k documents desired.
 @tool
 def search(query:Annotated[str, "Input query to generate several more vector search queries to query vector databases"],
            keywords: Annotated[list[str], "List of keywords that the documents must have one of to be considered."]
-           ) -> list[_AIDocument]:
+           ) -> list[AIDocument]:
     """Search tool to search across multiple data sources including documentation, jira tickets, slack messages and email messages"""
     print(f"Received Query: {query} with keywords {keywords}")
     s = ""
