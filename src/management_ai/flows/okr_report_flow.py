@@ -32,7 +32,7 @@ def run_okr_report(okr):
     
     return {"okr": str(okr), "report": report}
 
-@flow(name="OKR Report Flow")
+@flow(name="OKR Report Flow", timeout_seconds=3600)
 def okr_report_flow(quarter: str = "current"):
     """
     Flow to generate OKR reports

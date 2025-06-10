@@ -45,7 +45,7 @@ def store_vector_db(messages, backupdir):
 
     
 
-@flow(name="slack-backup-flow",log_prints=True)
+@flow(name="slack-backup-flow",log_prints=True, timeout_seconds=3600)
 def slack_backup_flow(first_date: str | None = None, public_channel: list[str] | None = None):
     """
     Main Prefect flow to perform the Slack backup and process the message files.

@@ -30,7 +30,7 @@ def generate_person_report(p, from_date, to_date):
     report = run_report(docs=docs, report_message=query)
     return f"{p.first} {p.last} report from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}\n\n{report}"
 
-@flow(name="People Report Flow")
+@flow(name="People Report Flow", timeout_seconds=3600)
 def people_report_flow(
     weeks_back: int = 2,
     person_name: str = "",

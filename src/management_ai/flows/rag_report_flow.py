@@ -23,7 +23,7 @@ def get_documents(document_query):
     all_docs.sort(key=lambda x: x.search_score, reverse=True)
     return all_docs[:15]
 
-@flow(name="RAG Report Flow")
+@flow(name="RAG Report Flow", timeout_seconds=3600)
 def rag_report_flow(
     query: str = "I need information about recent projects",
     doc_query: str = ""

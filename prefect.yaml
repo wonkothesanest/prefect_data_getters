@@ -90,7 +90,7 @@ deployments:
   entrypoint: 
     src/prefect_data_getters/datagetters/google_calendar_backup.py:google_calendar_backup_flow
   parameters:
-    days: 1
+    days: 3
   work_pool:
     name: default
     work_queue_name: default
@@ -172,7 +172,7 @@ deployments:
   description: Retrieve, process, and analyze Gmail messages
   entrypoint: src/prefect_data_getters/datagetters/gmail_backup.py:gmail_flow
   parameters:
-    days_ago: 1
+    days_ago: 4
   work_pool:
     name: default
     work_queue_name: default

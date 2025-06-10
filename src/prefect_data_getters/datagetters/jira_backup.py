@@ -34,7 +34,7 @@ def store_documents_in_vectorstore(documents: List[Document]):
     batch_size = 1000  # Adjust based on your needs
     batch_process_and_store(documents, vectorstore)
 
-@flow(name="jira-backup-flow", log_prints=True)
+@flow(name="jira-backup-flow", log_prints=True, timeout_seconds=3600)
 def jira_backup_flow():
     # Define the JQL query
     jql_query = 'updated >= -180d AND (project = HYP OR project = Ingest OR project = ONBRD OR project = client)'

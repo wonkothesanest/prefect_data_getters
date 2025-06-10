@@ -44,7 +44,7 @@ def store_documents_in_vectorstore(documents: List[Document]):
     batch_process_and_store(documents, vectorstore)
 
 
-@flow(name="gmail-mbox-backup-flow", log_prints=True)
+@flow(name="gmail-mbox-backup-flow", log_prints=True, timeout_seconds=3600)
 def gmail_mbox_backup_flow(days_ago: int=1):
     # Get messages from the past given number of days
     messages = retrieve_messages(days_ago)
@@ -83,7 +83,7 @@ def gmail_mbox_backup_flow(days_ago: int=1):
     
 
 
-@flow(name="Gmail Flow", log_prints=True, )
+@flow(name="Gmail Flow", log_prints=True, timeout_seconds=3600*3)
 def gmail_flow(days_ago: int = 3):
     """
     Flow to retrieve and process Gmail messages.

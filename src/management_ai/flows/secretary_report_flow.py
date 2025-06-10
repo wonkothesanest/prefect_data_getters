@@ -6,7 +6,7 @@ from prefect.artifacts import create_markdown_artifact
 from management_ai.report_secretary import generate_secratary_report, get_workdays_ago
 
 
-@flow(name="Secretary Report Flow")
+@flow(name="Secretary Report Flow", timeout_seconds=3600)
 def secretary_report_flow(workdays_back: int = 2):
     """
     Flow to generate secretary reports

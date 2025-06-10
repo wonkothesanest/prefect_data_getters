@@ -63,7 +63,7 @@ def process_email_and_upsert(email: Dict) -> Dict:
         raise e
 
 
-@flow(name="Email Processing Flow", log_prints=True)
+@flow(name="Email Processing Flow", log_prints=True, timeout_seconds=3600)
 def process_emails_by_google_ids(google_ids: Optional[List[str]] | None = None, overwrite_existing: bool = False, num_search_if_no_ids: int = 300):
     logger = prefect.get_run_logger()
 
@@ -103,7 +103,7 @@ def process_emails_by_google_ids(google_ids: Optional[List[str]] | None = None, 
     return email_ids
 
 
-@flow
+@flow(timeout_seconds=3600, name="Utilize Email Analysis Flow")
 def utilize_analysis_flow(email_ids: List[str]):
     """Utilize the analysis from the processed email."""
     logger = prefect.get_run_logger()

@@ -53,7 +53,7 @@ def store_documents_in_vectorstore(documents: List[Document]):
     embeddings, vectorstore = get_embeddings_and_vectordb("bitbucket_pull_requests")
     batch_process_and_store(documents, vectorstore, batch_size=1000)
 
-@flow(name="bitbucket-pr-backup-flow", log_prints=True)
+@flow(name="bitbucket-pr-backup-flow", log_prints=True, timeout_seconds=3600)
 def bitbucket_pr_backup_flow(earliest_date: Optional[str] = None):
     # If earliest_date is provided as a string, parse it into a datetime
     dt = None

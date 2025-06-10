@@ -63,7 +63,7 @@ def store_documents_in_vectorstore(documents: list):
     embeddings, vectorstore = get_embeddings_and_vectordb("google_calendar_events")
     batch_process_and_store(documents, vectorstore)
 
-@flow(name="google-calendar-backup-flow", log_prints=True)
+@flow(name="google-calendar-backup-flow", log_prints=True, timeout_seconds=3600)
 def google_calendar_backup_flow(days: int = 1):
     """
     Main Prefect flow to:
