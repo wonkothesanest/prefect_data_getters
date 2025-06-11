@@ -2,7 +2,8 @@ from elasticsearch import Elasticsearch, helpers
 import prefect_data_getters.utilities.constants as C
 
 es = Elasticsearch(C.ES_URL)
-
+# TODO: make this private and go through the AI doc
+# right now this is just used by gmail, thank goodness.
 def upsert_documents(docs: list[dict], index_name: str, id_field: str):
     actions = []
 

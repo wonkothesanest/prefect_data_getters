@@ -1,12 +1,18 @@
 import pprint
 from langchain_core.documents import Document
 from datetime import datetime
-from typing import Literal
 from prefect_data_getters.utilities.constants import VECTOR_STORE_NAMES  
 import uuid
 
 
-class _AIDocument:
+#TODO: Turn this into a super class and have all the other docs 
+# inherit from it. This will allow us to have a common interface for all documents.
+# we can then hide the use of external indexes from the implementation of using
+# the vectors and text documents that seem to be baked into ES.
+# perhaps we should also inherit from document and extend.
+# We can then wrap the elasticsearch.py and vectorstore.py files into this class.
+
+class AIDocument:
     def __init__(self, doc: Document):
         self._document = doc
         self._type_name = None
@@ -40,7 +46,7 @@ class _AIDocument:
 """
         return ""
 
-def _create_document(doc: Document, name: VECTOR_STORE_NAMES) -> _AIDocument:
+def _create_document(doc: Document, name: VECTOR_STORE_NAMES) -> AIDocument:
     """Factory function to create a document instance based on the vector store name."""
     if name == "jira_issues":
         return JiraDocument(doc)
@@ -59,10 +65,11 @@ def _create_document(doc: Document, name: VECTOR_STORE_NAMES) -> _AIDocument:
         raise ValueError(f"Unknown document type: {name}")
     
 
-def convert_documents_to_ai_documents(docs: list[Document], doc_store_name: VECTOR_STORE_NAMES) -> list[_AIDocument]:
+def convert_documents_to_ai_documents(docs: list[Document], doc_store_name: VECTOR_STORE_NAMES) -> list[AIDocument]:
     return [_create_document(d, doc_store_name) for d in docs]
 
-class JiraDocument(_AIDocument):
+# TODO: move all implementations to separate files?
+class JiraDocument(AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Jira Document"
@@ -90,7 +97,7 @@ END: {self._get_metadata("key")}
 """
         return s
 
-class EmailDocument(_AIDocument):
+class EmailDocument(AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Email Document"
@@ -116,7 +123,7 @@ END: {self._get_metadata("message-id")}
 """
         return s
 
-class SlackMessageDocument(_AIDocument):
+class SlackMessageDocument(AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self._type_name = "Slack Message Document"
@@ -143,7 +150,7 @@ END: {self._get_metadata("user")}
 """
         return s
 
-class SlabDocument(_AIDocument):
+class SlabDocument(AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self.id = self._get_metadata("document_id")
@@ -199,7 +206,7 @@ END: {self._get_metadata("document_id")}
         return s
 
 
-class BitbucketPR(_AIDocument):
+class BitbucketPR(AIDocument):
     def __init__(self, doc):
         super().__init__(doc)
         self.id = self._get_metadata("id")

@@ -1,7 +1,7 @@
 from langchain.schema import Document
 from datetime import datetime
 
-
+# TODO this is tightly part of the document not the getters.
 def add_default_metadata(docs: list[Document]):
     """
     For all documents we want some metadata that is the same 

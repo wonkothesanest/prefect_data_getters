@@ -34,6 +34,9 @@ comment.comments[].body
 
 """
 
+# TODO: I would also like to clean up each of these folders to not be in __INIT__
+# and possibly have each inherit from a super abstract class.
+
 from prefect import flow, task
 from prefect.blocks.system import Secret
 from atlassian import Jira, Bitbucket

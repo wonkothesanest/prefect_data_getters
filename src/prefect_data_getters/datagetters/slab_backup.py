@@ -10,7 +10,8 @@ from prefect_data_getters.exporters.slab import process_slab_docs
 
 @task
 def process_data_dir(split) -> List[Document]:
-    #TODO: documents do not have (ie null) updated or created
+    #TODO: documents do not have (ie null) updated or created, also remove add default metadata
+    # Make this all a partof the document processing.
     documents = process_slab_docs(SLAB_BACKUP_DIR, split=split)
 
     return filter_complex_metadata(add_default_metadata(documents))
@@ -29,7 +30,7 @@ def store_full_documents_in_vectorstore(documents: List[Document]):
     batch_process_and_store(documents, vectorstore)
 
 
-@flow(name="slab-backup-flow", log_prints=True)
+@flow(name="slab-backup-flow", log_prints=True, timeout_seconds=3600)
 def slab_backup_flow():
     # Step 1: Process the data dir
     documents_split = process_data_dir(True)
