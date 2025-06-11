@@ -3,6 +3,7 @@ pick
 langchain
 elasticsearch
 elasticsearch_dsl
+pytest
 
 pip install git+https://github.com/openai/whisper.git
 pip install -e . (from source directory)
