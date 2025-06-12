@@ -4,9 +4,9 @@ This file should be removed after migration is complete.
 """
 
 from langchain_core.documents import Document
-from .documents_new import AIDocument as NewAIDocument
-from .documents import AIDocument as OldAIDocument
-from ..utilities.constants import VECTOR_STORE_NAMES
+from prefect_data_getters.stores.documents_new import AIDocument as NewAIDocument
+from prefect_data_getters.stores.documents import AIDocument as OldAIDocument
+from prefect_data_getters.utilities.constants import VECTOR_STORE_NAMES
 
 class DocumentMigrationHelper:
     """Helper class to migrate between old and new document formats"""

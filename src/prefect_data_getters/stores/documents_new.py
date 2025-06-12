@@ -1,7 +1,7 @@
 import pprint
 from langchain_core.documents import Document
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import Field
 
 class AIDocument(Document):
@@ -120,3 +120,59 @@ class AIDocument(Document):
             doc.id = data['id']
             
         return doc
+    
+    def save(self, store_name: str, unified_store: Optional['UnifiedDocumentStore'] = None) -> bool:
+        """
+        Save this document to storage.
+        
+        Args:
+            store_name: Name of the store/index
+            unified_store: Optional UnifiedDocumentStore instance
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if unified_store is None:
+            from prefect_data_getters.stores.unified_document_store import UnifiedDocumentStore
+            unified_store = UnifiedDocumentStore()
+        
+        results = unified_store.store_documents([self], store_name)
+        return results['elasticsearch']['success'] > 0
+
+    def delete(self, store_name: str, unified_store: Optional['UnifiedDocumentStore'] = None) -> bool:
+        """
+        Delete this document from storage.
+        
+        Args:
+            store_name: Name of the store/index
+            unified_store: Optional UnifiedDocumentStore instance
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if unified_store is None:
+            from .unified_document_store import UnifiedDocumentStore
+            unified_store = UnifiedDocumentStore()
+        
+        return unified_store.delete_document(self.get_display_id(), store_name)
+
+    @classmethod
+    def search(cls, query: str, store_name: str, top_k: int = 10,
+              unified_store: Optional['UnifiedDocumentStore'] = None) -> List['AIDocument']:
+        """
+        Search for documents of this type.
+        
+        Args:
+            query: Search query string
+            store_name: Name of the store/index
+            top_k: Maximum number of results
+            unified_store: Optional UnifiedDocumentStore instance
+            
+        Returns:
+            List of AIDocument instances
+        """
+        if unified_store is None:
+            from .unified_document_store import UnifiedDocumentStore
+            unified_store = UnifiedDocumentStore()
+        
+        return unified_store.search_documents(query, [store_name], top_k=top_k)

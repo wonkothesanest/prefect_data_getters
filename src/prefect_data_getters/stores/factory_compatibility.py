@@ -5,11 +5,11 @@ This maintains backward compatibility while transitioning to the registry patter
 
 from typing import List
 from langchain_core.documents import Document
-from .document_registry import DocumentTypeRegistry
-from ..utilities.constants import VECTOR_STORE_NAMES
+from prefect_data_getters.stores.document_registry import DocumentTypeRegistry
+from prefect_data_getters.utilities.constants import VECTOR_STORE_NAMES
 
 # Import will be added after Phase 1 is complete
-from .documents_new import AIDocument
+from prefect_data_getters.stores.documents_new import AIDocument
 
 def create_document_from_langchain(doc: Document, store_name: VECTOR_STORE_NAMES) -> 'AIDocument':
     """

@@ -3,10 +3,10 @@ Document Type Registry for managing document type creation and registration.
 """
 
 from typing import Dict, Type, Optional, List
-from ..utilities.constants import VECTOR_STORE_NAMES
+from prefect_data_getters.utilities.constants import VECTOR_STORE_NAMES
 
 # Import will be added after Phase 1 is complete
-from .documents_new import AIDocument
+from prefect_data_getters.stores.documents_new import AIDocument
 
 class DocumentTypeRegistry:
     """
