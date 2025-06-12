@@ -1,8 +1,11 @@
 import pprint
+import logging
 from langchain_core.documents import Document
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 class AIDocument(Document):
     """
@@ -121,58 +124,141 @@ class AIDocument(Document):
             
         return doc
     
-    def save(self, store_name: str, unified_store: Optional['UnifiedDocumentStore'] = None) -> bool:
+    def save(self, store_name: str, also_store_vectors: bool = True) -> bool:
         """
-        Save this document to storage.
+        Save this document to Elasticsearch storage.
         
         Args:
             store_name: Name of the store/index
-            unified_store: Optional UnifiedDocumentStore instance
+            also_store_vectors: Whether to also store in vector index for semantic search
             
         Returns:
             True if successful, False otherwise
         """
-        if unified_store is None:
-            from prefect_data_getters.stores.unified_document_store import UnifiedDocumentStore
-            unified_store = UnifiedDocumentStore()
-        
-        results = unified_store.store_documents([self], store_name)
-        return results['elasticsearch']['success'] > 0
+        try:
+            # Store in Elasticsearch for text search and primary storage
+            from .elasticsearch_manager import ElasticsearchManager
+            es_manager = ElasticsearchManager()
+            success = es_manager.save_document(self, store_name)
+            
+            # Optionally store in vector index for semantic search
+            if also_store_vectors and success:
+                try:
+                    from .vectorstore import ESVectorStore
+                    from langchain_core.documents import Document
+                    
+                    vector_store = ESVectorStore(store_name)
+                    base_doc = Document(
+                        page_content=self.page_content,
+                        metadata=self.metadata,
+                        id=self.get_display_id()
+                    )
+                    vector_store.batch_process_and_store([base_doc])
+                    logger.info(f"Stored document {self.get_display_id()} in both text and vector stores")
+                except Exception as e:
+                    logger.warning(f"Vector storage failed for {self.get_display_id()}: {e}")
+                    # Don't fail the whole operation if vector storage fails
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Failed to save document {self.get_display_id()}: {e}")
+            return False
 
-    def delete(self, store_name: str, unified_store: Optional['UnifiedDocumentStore'] = None) -> bool:
+    def delete(self, store_name: str) -> bool:
         """
         Delete this document from storage.
         
         Args:
             store_name: Name of the store/index
-            unified_store: Optional UnifiedDocumentStore instance
             
         Returns:
             True if successful, False otherwise
         """
-        if unified_store is None:
-            from .unified_document_store import UnifiedDocumentStore
-            unified_store = UnifiedDocumentStore()
-        
-        return unified_store.delete_document(self.get_display_id(), store_name)
+        try:
+            from .elasticsearch_manager import ElasticsearchManager
+            es_manager = ElasticsearchManager()
+            success = es_manager.delete_document(self.get_display_id(), store_name)
+            
+            # Note: Vector store deletion would require additional implementation
+            # Current ESVectorStore doesn't support deletion by ID
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Failed to delete document {self.get_display_id()}: {e}")
+            return False
 
     @classmethod
-    def search(cls, query: str, store_name: str, top_k: int = 10,
-              unified_store: Optional['UnifiedDocumentStore'] = None) -> List['AIDocument']:
+    def search(cls, query: str, store_name: str,
+               search_type: str = "text", top_k: int = 10) -> List['AIDocument']:
         """
-        Search for documents of this type.
+        Search for documents.
         
         Args:
             query: Search query string
             store_name: Name of the store/index
+            search_type: "text" (Elasticsearch full-text), "vector" (semantic), or "hybrid"
             top_k: Maximum number of results
-            unified_store: Optional UnifiedDocumentStore instance
             
         Returns:
-            List of AIDocument instances
+            List of AIDocument instances with search scores
         """
-        if unified_store is None:
-            from .unified_document_store import UnifiedDocumentStore
-            unified_store = UnifiedDocumentStore()
+        from .document_registry import DocumentTypeRegistry
+        document_class = DocumentTypeRegistry.get_document_class(store_name)
         
-        return unified_store.search_documents(query, [store_name], top_k=top_k)
+        results = []
+        
+        try:
+            if search_type in ["text", "hybrid"]:
+                # Elasticsearch text search
+                from .elasticsearch_manager import ElasticsearchManager
+                es_manager = ElasticsearchManager()
+                
+                es_query = {
+                    "query": {
+                        "multi_match": {
+                            "query": query,
+                            "fields": ["page_content^2", "metadata.*"],
+                            "type": "best_fields",
+                            "fuzziness": "AUTO"
+                        }
+                    }
+                }
+                
+                text_results = es_manager.search_documents(es_query, store_name, document_class, top_k)
+                results.extend(text_results)
+            
+            if search_type in ["vector", "hybrid"]:
+                # Vector semantic search
+                try:
+                    from .vectorstore import ESVectorStore
+                    vector_store = ESVectorStore(store_name)
+                    vector_results = vector_store.getESStore().similarity_search(query, k=top_k)
+                    
+                    # Convert to AIDocuments
+                    for doc in vector_results:
+                        ai_doc = document_class.from_dict({
+                            'page_content': doc.page_content,
+                            'metadata': doc.metadata or {},
+                            'id': doc.metadata.get('id') if doc.metadata else None
+                        })
+                        ai_doc.search_score = getattr(doc, 'search_score', 0.0)
+                        results.append(ai_doc)
+                        
+                except Exception as e:
+                    logger.warning(f"Vector search failed for {store_name}: {e}")
+            
+            # Deduplicate and sort by score
+            unique_results = {}
+            for doc in results:
+                doc_id = doc.get_display_id()
+                if doc_id not in unique_results or (doc.search_score or 0) > (unique_results[doc_id].search_score or 0):
+                    unique_results[doc_id] = doc
+            
+            final_results = list(unique_results.values())
+            return sorted(final_results, key=lambda x: x.search_score or 0, reverse=True)[:top_k]
+            
+        except Exception as e:
+            logger.error(f"Search failed for {store_name}: {e}")
+            return []

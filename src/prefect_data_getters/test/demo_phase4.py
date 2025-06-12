@@ -1,18 +1,18 @@
 """
-Phase 4 Demo Script - Show the new unified Elasticsearch integration in action
+Phase 4 Demo Script - Show the new direct store access architecture in action
 """
 
 import sys
 sys.path.append('src')
 
 from prefect_data_getters.stores.documents_new import AIDocument
-from prefect_data_getters.stores.unified_document_store import UnifiedDocumentStore
 from prefect_data_getters.stores.elasticsearch_manager import ElasticsearchManager
 from prefect_data_getters.stores.elasticsearch_compatibility import upsert_documents
 from prefect_data_getters.stores.document_registry import DocumentTypeRegistry, register_document_type
+from prefect_data_getters.stores.vectorstore import ESVectorStore
 from unittest.mock import Mock
 
-print("🚀 Phase 4 Demo: Unified Elasticsearch Integration")
+print("🚀 Phase 4 Demo: Direct Store Access Architecture")
 print("=" * 60)
 
 # 1. Document Creation with New Methods
@@ -21,7 +21,7 @@ print("-" * 30)
 
 # Create an enhanced AIDocument
 doc = AIDocument(
-    page_content="This is a demo document for Phase 4 Elasticsearch integration.",
+    page_content="This is a demo document for Phase 4 direct store access.",
     metadata={
         "author": "demo-user",
         "category": "integration-test",
@@ -36,7 +36,7 @@ print(f"🆔 Display ID: {doc.get_display_id()}")
 print(f"📝 Content preview: {doc.page_content[:50]}...")
 print(f"🏷️ Metadata: {list(doc.metadata.keys())}")
 
-# 2. Elasticsearch Manager
+# 2. ElasticsearchManager Features
 print("\n2️⃣ ElasticsearchManager Features")
 print("-" * 30)
 
@@ -53,21 +53,23 @@ print(f"📊 Document Type: {doc_dict['document_type']}")
 health = es_manager.health_check()
 print(f"🏥 Health Check Fields: {list(health.keys())}")
 
-# 3. Unified Document Store
-print("\n3️⃣ UnifiedDocumentStore Interface")
+# 3. Direct AIDocument Methods
+print("\n3️⃣ Direct AIDocument Store Access")
 print("-" * 30)
 
-store = UnifiedDocumentStore(es_manager)
+print(f"💾 Save method signature: {AIDocument.save.__doc__.split('.')[0]}...")
+print(f"🗑️ Delete method signature: {AIDocument.delete.__doc__.split('.')[0]}...")
+print(f"🔍 Search method signature: {AIDocument.search.__doc__.split('.')[0]}...")
 
-# Show query building
-query = store._build_elasticsearch_query("demo search", None, 10)
-print(f"🔍 Basic ES Query Structure: {list(query.keys())}")
+# Show new method capabilities
+print("\n📋 New Save Options:")
+print("   • also_store_vectors=True  -> Store in both text and vector indices")
+print("   • also_store_vectors=False -> Store only in text index for performance")
 
-# Show filtered query
-filters = {"author": "demo-user", "priority": "high"}
-filtered_query = store._build_elasticsearch_query("demo search", filters, 5)
-print(f"🎯 Filtered Query Type: {filtered_query['query'].keys()}")
-print(f"📋 Filter Count: {len(filtered_query['query']['bool']['filter'])}")
+print("\n🔍 New Search Types:")
+print("   • search_type='text'   -> Full-text Elasticsearch search")
+print("   • search_type='vector' -> Semantic vector search")
+print("   • search_type='hybrid' -> Combined text + vector search")
 
 # 4. Document Instance Methods
 print("\n4️⃣ Document Instance Methods")
@@ -88,8 +90,8 @@ print(f"🔍 Search signature: {search_sig}")
 print("\n5️⃣ Registry Integration")
 print("-" * 30)
 
-# Show how registry works with unified store
-registry = store.registry
+# Show direct registry usage
+registry = DocumentTypeRegistry
 print(f"📚 Registry available: {type(registry).__name__}")
 
 # Demo document type registration
@@ -116,7 +118,7 @@ old_format_docs = [
         'metadata': {'type': 'legacy'}
     },
     {
-        'page_content': 'Old format document 2', 
+        'page_content': 'Old format document 2',
         'google-id': 'old-doc-2',
         'author': 'legacy-system',
         'metadata': {'type': 'legacy'}
@@ -136,16 +138,10 @@ print("  📝 Text search: Full-text search via Elasticsearch")
 print("  🧠 Vector search: Semantic similarity search")
 print("  🔗 Hybrid search: Combined text + vector search")
 
-# Demo query building for different search types
-text_query = store._build_elasticsearch_query("important documents", None, 10)
-print(f"📝 Text query ready: {'multi_match' in text_query['query']}")
-
-filtered_text_query = store._build_elasticsearch_query(
-    "high priority tasks", 
-    {"priority": "high", "author": "demo-user"}, 
-    5
-)
-print(f"🎯 Filtered search ready: {'bool' in filtered_text_query['query']}")
+# Demo search method calls
+print(f"📝 Text search available: {hasattr(AIDocument, 'search')}")
+print(f"🧠 Vector search supported: search_type='vector'")
+print(f"🔗 Hybrid search supported: search_type='hybrid'")
 
 # 8. Error Handling & Health
 print("\n8️⃣ Error Handling & Health Monitoring")
@@ -156,10 +152,10 @@ mock_es.index.side_effect = Exception("Demo connection error")
 error_result = es_manager.save_document(doc, "demo_index")
 print(f"❌ Error handling works: {error_result == False}")
 
-# Health check integration
-health_info = store.health_check()
-print(f"🏥 Health components: {list(health_info.keys())}")
-print(f"📊 Registry status: {health_info['registry']['registered_types']} types")
+# Health check via ES manager
+health_info = es_manager.health_check()
+print(f"🏥 Health check available: {type(health_info) == dict}")
+print(f"📊 ES Health fields: {list(health_info.keys())}")
 
 # 9. Usage Examples
 print("\n9️⃣ Usage Examples")
@@ -167,35 +163,37 @@ print("-" * 30)
 
 print("📝 Example 1: Simple document storage")
 print("   doc = AIDocument('content', {'key': 'value'})")
-print("   success = doc.save('my_index')  # New way!")
+print("   success = doc.save('my_index')  # Direct store access!")
 
 print("\n📝 Example 2: Search documents")
-print("   results = AIDocument.search('query', 'my_index', top_k=10)")
+print("   results = AIDocument.search('query', 'my_index', search_type='text')")
 
-print("\n📝 Example 3: Unified store operations")
-print("   store = UnifiedDocumentStore()")
-print("   store.store_documents([doc], 'index', store_in_vector=True)")
+print("\n📝 Example 3: Vector storage")
+print("   success = doc.save('my_index', also_store_vectors=True)")
 
-print("\n📝 Example 4: Health monitoring")
-print("   health = store.health_check()")
-print("   if health['elasticsearch']['status'] == 'green': ...")
+print("\n📝 Example 4: Hybrid search")
+print("   results = AIDocument.search('query', 'my_index', search_type='hybrid')")
+
+print("\n📝 Example 5: ElasticsearchManager direct usage")
+print("   es_manager = ElasticsearchManager()")
+print("   success = es_manager.save_document(doc, 'index')")
 
 # 10. Migration Path
 print("\n🔟 Migration Path")
 print("-" * 30)
 
 print("✅ Phase 1: ✓ New AIDocument base class")
-print("✅ Phase 2: ✓ Document registry system") 
+print("✅ Phase 2: ✓ Document registry system")
 print("✅ Phase 3: ✓ Document types refactoring")
-print("✅ Phase 4: ✓ Elasticsearch integration")
+print("✅ Phase 4: ✓ Direct store access (UnifiedDocumentStore removed)")
 print("🔄 Backward compatibility maintained throughout")
 
 print("\n🎯 Next Steps for Adoption:")
-print("1. Start using UnifiedDocumentStore for new code")
-print("2. Gradually migrate from upsert_documents to store.store_documents")
-print("3. Use doc.save(), doc.delete(), AIDocument.search() for convenience")
-print("4. Monitor health via store.health_check()")
-print("5. Leverage hybrid search capabilities")
+print("1. Use doc.save(), doc.delete(), AIDocument.search() for direct access")
+print("2. Gradually migrate from upsert_documents to ElasticsearchManager")
+print("3. Leverage search_type options: 'text', 'vector', 'hybrid'")
+print("4. Monitor health via es_manager.health_check()")
+print("5. Use also_store_vectors=True for semantic search capabilities")
 
 print(f"\n🎉 Phase 4 Demo Complete!")
 print("🚀 The AIDocument system now has a unified, powerful storage interface!")
