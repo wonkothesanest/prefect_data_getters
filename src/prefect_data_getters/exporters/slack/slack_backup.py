@@ -10,7 +10,7 @@ from pick import pick
 from prefect_data_getters.utilities.constants import SCRATCH_BASE_DIR
 
 
-from .slacker_module import Slacker, Conversations
+from prefect_data_getters.exporters.slack.slacker_module import Slacker, Conversations
 
 def getReplies(slack, channelId, timestamp, oldestTimestamp, pageSize=1000):
     conversationObject = slack.conversations

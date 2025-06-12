@@ -1,10 +1,10 @@
 import pytest
-from ..stores.document_types.jira_document import JiraDocument
-from ..stores.document_types.email_document import EmailDocument
-from ..stores.document_types.slack_document import SlackMessageDocument
-from ..stores.document_types.slab_document import SlabDocument, SlabChunkDocument
-from ..stores.document_types.bitbucket_document import BitbucketPR
-from ..stores.document_registry import DocumentTypeRegistry
+from prefect_data_getters.stores.document_types.jira_document import JiraDocument
+from prefect_data_getters.stores.document_types.email_document import EmailDocument
+from prefect_data_getters.stores.document_types.slack_document import SlackMessageDocument
+from prefect_data_getters.stores.document_types.slab_document import SlabDocument, SlabChunkDocument
+from prefect_data_getters.stores.document_types.bitbucket_document import BitbucketPR
+from prefect_data_getters.stores.document_registry import DocumentTypeRegistry
 
 class TestPhase3DocumentTypes:
     """Test suite for Phase 3 document type refactoring"""

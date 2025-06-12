@@ -4,6 +4,11 @@
 
 This guide provides a step-by-step approach to implementing the AIDocument refactoring across four focused phases. Each phase builds upon the previous one while maintaining backward compatibility and minimizing risk.
 
+# General Code Guidelines
+Do not use a python command with the -c option to write out what should be a file in the commandline.  Create a file or test file instead, even if you will later remove it.
+
+Use Pytest as the testing engine.
+
 ## Phase Summary
 
 | Phase | Focus | Duration | Risk Level | Dependencies |

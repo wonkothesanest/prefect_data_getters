@@ -1,6 +1,6 @@
 import unittest
-from ..stores.documents_new import AIDocument
-from ..stores.compatibility import DocumentMigrationHelper
+from prefect_data_getters.stores.documents_new import AIDocument
+from prefect_data_getters.stores.compatibility import DocumentMigrationHelper
 from langchain_core.documents import Document
 
 class TestPhase1Refactoring(unittest.TestCase):

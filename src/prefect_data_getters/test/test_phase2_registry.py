@@ -1,7 +1,7 @@
 import pytest
-from ..stores.document_registry import DocumentTypeRegistry, register_document_type
-from ..stores.factory_compatibility import create_document_from_langchain, convert_documents_to_ai_documents_registry
-from ..stores.documents_new import AIDocument
+from prefect_data_getters.stores.document_registry import DocumentTypeRegistry, register_document_type
+from prefect_data_getters.stores.factory_compatibility import create_document_from_langchain, convert_documents_to_ai_documents_registry
+from prefect_data_getters.stores.documents_new import AIDocument
 from langchain_core.documents import Document
 
 class TestDocumentRegistry:

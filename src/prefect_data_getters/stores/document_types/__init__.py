@@ -6,11 +6,11 @@ that inherit from the base AIDocument class.
 """
 
 # Import all document types to ensure they are registered
-from .jira_document import JiraDocument
-from .email_document import EmailDocument
-from .slack_document import SlackMessageDocument
-from .slab_document import SlabDocument, SlabChunkDocument
-from .bitbucket_document import BitbucketPR
+from prefect_data_getters.stores.document_types.jira_document import JiraDocument
+from prefect_data_getters.stores.document_types.email_document import EmailDocument
+from prefect_data_getters.stores.document_types.slack_document import SlackMessageDocument
+from prefect_data_getters.stores.document_types.slab_document import SlabDocument, SlabChunkDocument
+from prefect_data_getters.stores.document_types.bitbucket_document import BitbucketPR
 
 __all__ = [
     'JiraDocument',
