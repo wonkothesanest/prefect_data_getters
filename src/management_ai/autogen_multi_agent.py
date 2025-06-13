@@ -17,7 +17,7 @@ async calls to LLMs to evaluate if a document is relevant to the task at hand
 Rank all the remaining documents.
 Return the top k documents desired.
 """
-from prefect_data_getters.stores.documents import AIDocument
+from prefect_data_getters.stores.documents_new import AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
 from prefect_data_getters.utilities.constants import data_stores
 from langchain.schema import Document

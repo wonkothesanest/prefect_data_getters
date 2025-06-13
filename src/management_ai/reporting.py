@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Annotated, Any, List
 import os
 
-from prefect_data_getters.stores.documents import AIDocument
+from prefect_data_getters.stores.documents_new import AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
 from prefect_data_getters.utilities.constants import VECTOR_STORE_NAMES, data_stores
 from langchain.schema import Document
@@ -32,10 +32,6 @@ import json
 from langchain_core.messages import BaseMessage, ChatMessage
 
 from langgraph.graph import END, StateGraph, START
-from langgraph.prebuilt import create_react_agent
-from langchain_core.callbacks import StdOutCallbackHandler
-import prefect_data_getters.tools.search as searchers
-import management_ai.agents.report_template_okrs as OKR
 import management_ai.agents.reporting as P
 
 

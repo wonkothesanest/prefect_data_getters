@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Any, List
 
-from prefect_data_getters.stores.documents import AIDocument
+from prefect_data_getters.stores.documents_new import AIDocument
 from prefect_data_getters.stores.vectorstore import ESVectorStore
 from prefect_data_getters.utilities.constants import data_stores
 from langchain.schema import Document
