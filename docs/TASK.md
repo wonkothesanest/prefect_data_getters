@@ -13,34 +13,37 @@ Refactor the data exporter architecture to use a loosely coupled, functional app
 ### ✅ Completed Tasks
 - [x] Created architectural documentation (2025-06-13)
 - [x] Updated PLANNING.md with new architecture (2025-06-13)
+- [x] Created BaseExporter Abstract Class (2025-06-13)
+- [x] Created Processing Functions in Exporters Module (2025-06-13)
+- [x] Set Up Testing Framework (2025-06-13)
 
 ### 🔄 In Progress Tasks
 
 ### ⏳ Pending Tasks
 
-#### 1.1 Create BaseExporter Abstract Class
+#### 1.1 Create BaseExporter Abstract Class ✅ COMPLETED
 **File**: `src/prefect_data_getters/exporters/base.py`
-- [ ] Create abstract `BaseExporter` class with `export()` method
-- [ ] Add common utility methods for authentication and error handling
-- [ ] Include proper type hints and docstrings
-- [ ] Add configuration support via optional config parameter
+- [x] Create abstract `BaseExporter` class with `export()` method
+- [x] Add common utility methods for authentication and error handling
+- [x] Include proper type hints and docstrings
+- [x] Add configuration support via optional config parameter
 
-**Acceptance Criteria**:
-- Abstract class cannot be instantiated directly
-- `export()` method is abstract and must be implemented by subclasses
-- Includes comprehensive docstrings with Google style
-- Type hints for all methods and parameters
+**Acceptance Criteria**: ✅ ALL MET
+- [x] Abstract class cannot be instantiated directly
+- [x] `export()` method is abstract and must be implemented by subclasses
+- [x] Includes comprehensive docstrings with Google style
+- [x] Type hints for all methods and parameters
 
-#### 1.2 Create Processing Functions in Exporters Module
+#### 1.2 Create Processing Functions in Exporters Module ✅ COMPLETED
 **File**: `src/prefect_data_getters/exporters/__init__.py`
-- [ ] Implement `add_ingestion_timestamp()` with configurable metadata field
-- [ ] Implement `convert_to_ai_documents()` function using existing DocumentTypeRegistry
-- [ ] Add utility functions for common document transformations
-- [ ] Add proper error handling and logging
-- [ ] Include comprehensive type hints
-- [ ] Use absolute imports throughout
+- [x] Implement `add_ingestion_timestamp()` with configurable metadata field
+- [x] Implement `convert_to_ai_documents()` function using existing DocumentTypeRegistry
+- [x] Add utility functions for common document transformations
+- [x] Add proper error handling and logging
+- [x] Include comprehensive type hints
+- [x] Use absolute imports throughout
 
-**Function Signatures**:
+**Function Signatures**: ✅ IMPLEMENTED
 ```python
 def add_ingestion_timestamp(
     docs: Iterator[Document],
@@ -53,120 +56,235 @@ def convert_to_ai_documents(
 ) -> Iterator[AIDocument]:
 ```
 
-**Acceptance Criteria**:
-- Functions work with any Iterator[Document]
-- Configurable metadata field name for timestamp function
-- Integration with existing DocumentTypeRegistry for conversion
-- Preserves all existing document metadata
-- Handles edge cases (None metadata, empty documents)
-- Uses absolute imports: `from prefect_data_getters.stores.document_registry import DocumentTypeRegistry`
+**Acceptance Criteria**: ✅ ALL MET
+- [x] Functions work with any Iterator[Document]
+- [x] Configurable metadata field name for timestamp function
+- [x] Integration with existing DocumentTypeRegistry for conversion
+- [x] Preserves all existing document metadata
+- [x] Handles edge cases (None metadata, empty documents)
+- [x] Uses absolute imports: `from prefect_data_getters.stores.document_registry import DocumentTypeRegistry`
 
-#### 1.3 Set Up Testing Framework
+#### 1.3 Set Up Testing Framework ✅ COMPLETED
 **Directory**: `tests/exporters/`
-- [ ] Create test structure mirroring main code
-- [ ] Write unit tests for BaseExporter (test that it's abstract)
-- [ ] Write unit tests for processing functions in exporters/__init__.py
-- [ ] Set up pytest configuration and fixtures
+- [x] Create test structure mirroring main code
+- [x] Write unit tests for BaseExporter (test that it's abstract)
+- [x] Write unit tests for processing functions in exporters/__init__.py
+- [x] Set up pytest configuration and fixtures
 
-**Test Coverage Requirements**:
-- Expected use case tests
-- Edge case tests (empty iterators, None values)
-- Failure case tests (invalid data, network errors)
-- Integration tests with existing stores module
+**Test Coverage Requirements**: ✅ ALL MET
+- [x] Expected use case tests
+- [x] Edge case tests (empty iterators, None values)
+- [x] Failure case tests (invalid data, network errors)
+- [x] Integration tests with existing stores module
 
 ## Phase 2: Refactor Gmail Exporter (Week 2)
 
+### ✅ Completed Tasks
+- [x] Refactored Gmail Exporter (2025-06-13)
+- [x] Updated Gmail Module Structure (2025-06-13)
+- [x] Created Gmail-Specific Tests (2025-06-13)
+
 ### ⏳ Pending Tasks
 
-#### 2.1 Refactor Gmail Exporter
+#### 2.1 Refactor Gmail Exporter ✅ COMPLETED
 **File**: `src/prefect_data_getters/exporters/gmail.py`
-- [ ] Create `GmailExporter` class inheriting from `BaseExporter`
-- [ ] Implement specific `export()` method signature with Gmail parameters
-- [ ] Extract authentication logic into separate methods
-- [ ] Move existing functionality from `gmail/__init__.py`
-- [ ] Add comprehensive error handling and retry logic
+- [x] Create `GmailExporter` class inheriting from `BaseExporter`
+- [x] Implement specific `export()` method signature with Gmail parameters
+- [x] Extract authentication logic into separate methods
+- [x] Move existing functionality from `gmail/__init__.py`
+- [x] Add comprehensive error handling and retry logic
 
-**Method Signature**:
+**Method Signature**: ✅ IMPLEMENTED
 ```python
 def export(
-    self, 
-    days_ago: int = 7, 
-    query: str = None, 
+    self,
+    days_ago: int = 7,
+    query: str = None,
     max_results: int = None
 ) -> Iterator[Document]:
 ```
 
-**Acceptance Criteria**:
-- Inherits from BaseExporter
-- Specific method signature for IDE code completion
-- Maintains all existing functionality
-- Improved error handling and logging
-- Memory efficient (uses iterators)
+**Acceptance Criteria**: ✅ ALL MET
+- [x] Inherits from BaseExporter
+- [x] Specific method signature for IDE code completion
+- [x] Maintains all existing functionality
+- [x] Improved error handling and logging
+- [x] Memory efficient (uses iterators)
 
-#### 2.2 Update Gmail Module Structure
+#### 2.2 Update Gmail Module Structure ✅ COMPLETED
 **File**: `src/prefect_data_getters/exporters/gmail/__init__.py`
-- [ ] Update to import from new `gmail.py` module
-- [ ] Maintain backward compatibility with existing functions
-- [ ] Add deprecation warnings for old functions
-- [ ] Provide migration examples in docstrings
-- [ ] Use absolute imports
+- [x] Update to import from new `gmail.py` module
+- [x] Maintain backward compatibility with existing functions
+- [x] Add deprecation warnings for old functions
+- [x] Provide migration examples in docstrings
+- [x] Use absolute imports
 
-#### 2.3 Create Gmail-Specific Tests
+#### 2.3 Create Gmail-Specific Tests ✅ COMPLETED
 **File**: `tests/exporters/test_gmail.py`
-- [ ] Test Gmail exporter instantiation and inheritance
-- [ ] Test export method with various parameters
-- [ ] Mock Gmail API calls for testing
-- [ ] Test error handling and edge cases
-- [ ] Test backward compatibility functions
-- [ ] Test integration with processing functions from exporters module
+- [x] Test Gmail exporter instantiation and inheritance
+- [x] Test export method with various parameters
+- [x] Mock Gmail API calls for testing
+- [x] Test error handling and edge cases
+- [x] Test backward compatibility functions
+- [x] Test integration with processing functions from exporters module
+
+**Test Results**: ✅ 24 TESTS PASSED
+- Complete test coverage with 100% pass rate
+- Comprehensive error handling validation
+- Backward compatibility verification
+- Integration testing with processing functions
 
 ## Phase 3: Refactor Other Exporters (Week 3)
 
-### ⏳ Pending Tasks
+### ✅ Completed Tasks
+- [x] Refactored Slack Exporter (2025-06-13)
+- [x] Enhanced BaseExporter with separate export() and process() methods (2025-06-13)
+- [x] Updated Gmail and Slack exporters to new pattern (2025-06-13)
+- [x] All tests passing (97/97) (2025-06-13)
 
-#### 3.1 Refactor Slack Exporter
-**File**: `src/prefect_data_getters/exporters/slack.py`
-- [ ] Create `SlackExporter` class inheriting from `BaseExporter`
-- [ ] Implement specific export method signature
-- [ ] Move logic from existing slack modules
-- [ ] Add Slack-specific error handling
+### 🎯 Established Pattern for Remaining Exporters
 
-**Method Signature**:
-```python
-def export(
-    self, 
-    channels: List[str] = None, 
-    days_ago: int = 7, 
-    limit: int = None
-) -> Iterator[Document]:
-```
+The Gmail and Slack exporters have established a clear pattern that should be followed for all remaining exporters:
 
-#### 3.2 Refactor Jira Exporter
-**File**: `src/prefect_data_getters/exporters/jira.py`
+#### **Pattern Template for New Exporters**
+
+1. **Inherit from BaseExporter** with two abstract methods:
+   - `export(**kwargs) -> Iterator[Any]` - Returns raw API data
+   - `process(raw_data: Iterator[Any]) -> Iterator[Document]` - Converts raw data to Documents
+
+2. **Method Signatures** - Each exporter has specific parameters:
+   ```python
+   def export(self, param1: type = default, param2: type = default) -> Iterator[Dict[str, Any]]:
+   def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+   ```
+
+3. **File Structure**:
+   - Main exporter: `src/prefect_data_getters/exporters/{name}_exporter.py`
+   - Tests: `tests/exporters/test_{name}.py`
+   - Backward compatibility maintained in existing modules
+
+4. **Test Requirements**:
+   - Test both export() and process() methods separately
+   - Test export_documents() convenience method
+   - Test error handling and edge cases
+   - Minimum 20+ tests per exporter
+
+### ⏳ Remaining Exporters to Implement
+
+#### 3.2 Jira Exporter
+**File**: `src/prefect_data_getters/exporters/jira_exporter.py`
 - [ ] Create `JiraExporter` class inheriting from `BaseExporter`
-- [ ] Implement specific export method signature
+- [ ] Implement `export()` method returning raw Jira issue data
+- [ ] Implement `process()` method converting to JiraDocument objects
 - [ ] Add Jira-specific authentication and error handling
+- [ ] Create comprehensive test suite (tests/exporters/test_jira.py)
 
-**Method Signature**:
+**Method Signatures**:
 ```python
-def export(
-    self, 
-    project: str = None, 
-    status: str = None, 
-    assignee: str = None
-) -> Iterator[Document]:
+def export(self, project: str = None, status: str = None, assignee: str = None,
+          days_ago: int = 30) -> Iterator[Dict[str, Any]]:
+    """Export raw Jira issues."""
+
+def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+    """Process raw Jira data into JiraDocument objects."""
 ```
 
-#### 3.3 Refactor Remaining Exporters
-- [ ] **Slab Exporter**: `src/prefect_data_getters/exporters/slab.py`
-- [ ] **Bitbucket Exporter**: `src/prefect_data_getters/exporters/bitbucket.py`
-- [ ] **Calendar Exporter**: `src/prefect_data_getters/exporters/calendar.py`
+**Implementation Steps**:
+1. Examine existing `src/prefect_data_getters/exporters/jira/__init__.py`
+2. Extract authentication and API logic
+3. Create separate export() method for raw data
+4. Create process() method using existing JiraDocument type
+5. Add comprehensive error handling and retry logic
+6. Create test suite following Gmail/Slack pattern
+7. Update backward compatibility in jira/__init__.py
 
-#### 3.4 Create Source-Specific Processing
-**Directory**: `src/prefect_data_getters/processing/custom/`
-- [ ] **Slack Processing**: `slack.py` - extend slack message context
-- [ ] **Jira Processing**: `jira.py` - enrich Jira metadata
-- [ ] Add tests for custom processing functions
+#### 3.3 Slab Exporter
+**File**: `src/prefect_data_getters/exporters/slab_exporter.py`
+- [ ] Create `SlabExporter` class inheriting from `BaseExporter`
+- [ ] Implement export() and process() methods
+- [ ] Integration with existing SlabDocument types
+
+**Method Signatures**:
+```python
+def export(self, space: str = None, days_ago: int = 30,
+          limit: int = None) -> Iterator[Dict[str, Any]]:
+def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+```
+
+#### 3.4 Bitbucket Exporter
+**File**: `src/prefect_data_getters/exporters/bitbucket_exporter.py`
+- [ ] Create `BitbucketExporter` class inheriting from `BaseExporter`
+- [ ] Implement export() and process() methods
+- [ ] Integration with existing BitbucketPR document type
+
+**Method Signatures**:
+```python
+def export(self, repository: str = None, state: str = "OPEN",
+          days_ago: int = 30) -> Iterator[Dict[str, Any]]:
+def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+```
+
+#### 3.5 Calendar Exporter
+**File**: `src/prefect_data_getters/exporters/calendar_exporter.py`
+- [ ] Create `CalendarExporter` class inheriting from `BaseExporter`
+- [ ] Implement export() and process() methods
+- [ ] Create appropriate document type for calendar events
+
+**Method Signatures**:
+```python
+def export(self, calendar_id: str = "primary", days_ago: int = 7,
+          days_ahead: int = 30) -> Iterator[Dict[str, Any]]:
+def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+```
+
+### 📋 Implementation Checklist for Each Exporter
+
+For each remaining exporter, follow this checklist:
+
+#### **Development Steps**
+- [ ] 1. Analyze existing exporter code in `exporters/{name}/__init__.py`
+- [ ] 2. Create new `{name}_exporter.py` file with class inheriting from BaseExporter
+- [ ] 3. Implement `export()` method returning raw API data (Iterator[Dict[str, Any]])
+- [ ] 4. Implement `process()` method converting raw data to Documents
+- [ ] 5. Add authentication, error handling, and retry logic
+- [ ] 6. Ensure integration with existing document types
+- [ ] 7. Add comprehensive logging throughout
+
+#### **Testing Steps**
+- [ ] 8. Create `tests/exporters/test_{name}.py` following established pattern
+- [ ] 9. Test export() method with mocked API responses
+- [ ] 10. Test process() method with sample raw data
+- [ ] 11. Test export_documents() convenience method
+- [ ] 12. Test error handling and edge cases
+- [ ] 13. Test backward compatibility
+- [ ] 14. Achieve minimum 20+ tests with 100% pass rate
+
+#### **Integration Steps**
+- [ ] 15. Update existing `exporters/{name}/__init__.py` for backward compatibility
+- [ ] 16. Add deprecation warnings to old functions
+- [ ] 17. Update `exporters/__init__.py` to include new exporter
+- [ ] 18. Create usage examples in `examples/{name}_exporter_demo.py`
+- [ ] 19. Update documentation
+
+### 🎯 Success Criteria for Each Exporter
+
+- [ ] Inherits from BaseExporter with proper method signatures
+- [ ] Separates raw data export from document processing
+- [ ] Maintains all existing functionality
+- [ ] Has comprehensive test coverage (20+ tests, 100% pass rate)
+- [ ] Includes proper error handling and retry logic
+- [ ] Maintains backward compatibility
+- [ ] Follows established code patterns from Gmail/Slack exporters
+- [ ] Integrates with existing document types and storage systems
+
+### 📈 Priority Order
+
+1. **Jira Exporter** (highest priority - most complex API)
+2. **Slab Exporter** (medium priority - documentation system)
+3. **Bitbucket Exporter** (medium priority - code repository)
+4. **Calendar Exporter** (lower priority - simpler API)
+
+Each exporter should be implemented, tested, and verified before moving to the next one to ensure quality and consistency.
 
 ## Phase 4: Integration and Workflows (Week 4)
 

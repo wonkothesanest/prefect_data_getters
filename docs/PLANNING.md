@@ -59,36 +59,58 @@ src/prefect_data_getters/
 
 ## Key Components
 
-### BaseExporter Abstract Class
+### BaseExporter Abstract Class (Enhanced Pattern)
 ```python
 from abc import ABC, abstractmethod
-from typing import Iterator
+from typing import Iterator, Any, Dict
 from langchain_core.documents import Document
 
 class BaseExporter(ABC):
-    """Abstract base class for all data exporters."""
+    """Abstract base class for all data exporters with separated export and process methods."""
     
     @abstractmethod
-    def export(self, **kwargs) -> Iterator[Document]:
-        """Export documents from the data source."""
+    def export(self, **kwargs) -> Iterator[Any]:
+        """Export raw data from the data source."""
         pass
+    
+    @abstractmethod
+    def process(self, raw_data: Iterator[Any]) -> Iterator[Document]:
+        """Process raw data into Document objects."""
+        pass
+    
+    def export_documents(self, **kwargs) -> Iterator[Document]:
+        """Convenience method that combines export and process for backward compatibility."""
+        raw_data = self.export(**kwargs)
+        return self.process(raw_data)
 ```
 
-### Concrete Exporters with Specific Signatures
+### Concrete Exporters with Specific Signatures (Updated Pattern)
 ```python
 class GmailExporter(BaseExporter):
-    def export(self, days_ago: int = 7, query: str = None, max_results: int = None) -> Iterator[Document]:
-        """Export Gmail messages with specific parameters."""
+    def export(self, days_ago: int = 7, query: str = None, max_results: int = None) -> Iterator[Dict[str, Any]]:
+        """Export raw Gmail messages from API."""
+        pass
+    
+    def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+        """Process raw Gmail data into Document objects."""
         pass
 
 class SlackExporter(BaseExporter):
-    def export(self, channels: List[str] = None, days_ago: int = 7, limit: int = None) -> Iterator[Document]:
-        """Export Slack messages with specific parameters."""
+    def export(self, channels: List[str] = None, days_ago: int = 7, limit: int = None) -> Iterator[Dict[str, Any]]:
+        """Export raw Slack messages from API."""
+        pass
+    
+    def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+        """Process raw Slack data into Document objects."""
         pass
 
 class JiraExporter(BaseExporter):
-    def export(self, project: str = None, status: str = None, assignee: str = None) -> Iterator[Document]:
-        """Export Jira issues with specific parameters."""
+    def export(self, project: str = None, status: str = None, assignee: str = None) -> Iterator[Dict[str, Any]]:
+        """Export raw Jira issues from API."""
+        pass
+    
+    def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+        """Process raw Jira data into Document objects."""
         pass
 ```
 
@@ -119,16 +141,23 @@ def convert_to_ai_documents(docs: Iterator[Document], store_name: str) -> Iterat
         yield ai_doc
 ```
 
-## Usage Patterns
+## Usage Patterns (Enhanced with Separated Export/Process)
 
-### Simple Usage
+### Pattern 1: Separate Export and Process
 ```python
-from prefect_data_getters.exporters.gmail import GmailExporter
+from prefect_data_getters.exporters.gmail_exporter import GmailExporter
 from prefect_data_getters.exporters import add_ingestion_timestamp, convert_to_ai_documents
 
-# Each step is independent and composable
+# Separate raw data export from processing
 exporter = GmailExporter()
-documents = exporter.export(days_ago=7)
+
+# Export raw Gmail API data
+raw_messages = exporter.export(days_ago=7, query="from:important@company.com")
+
+# Process raw data into documents
+documents = exporter.process(raw_messages)
+
+# Apply processing functions
 processed = add_ingestion_timestamp(documents)
 ai_docs = convert_to_ai_documents(processed, "email_messages")
 
@@ -137,11 +166,25 @@ for doc in ai_docs:
     doc.save("email_messages", also_store_vectors=True)
 ```
 
-### Custom Processing
+### Pattern 2: Raw Data Analysis and Custom Processing
 ```python
-from prefect_data_getters.exporters.gmail import GmailExporter
-from prefect_data_getters.exporters import add_ingestion_timestamp, convert_to_ai_documents
+from prefect_data_getters.exporters.gmail_exporter import GmailExporter
 
+exporter = GmailExporter()
+
+# Export raw data for analysis
+raw_messages = exporter.export(days_ago=7)
+
+# Analyze raw data before processing
+important_messages = []
+for msg in raw_messages:
+    if 'IMPORTANT' in msg.get('labelIds', []):
+        important_messages.append(msg)
+
+# Process only important messages
+documents = exporter.process(iter(important_messages))
+
+# Custom processing
 def custom_email_processor(docs: Iterator[Document]) -> Iterator[Document]:
     """Custom processing specific to your needs."""
     for doc in docs:
@@ -149,16 +192,44 @@ def custom_email_processor(docs: Iterator[Document]) -> Iterator[Document]:
             doc.metadata['priority'] = 'high'
         yield doc
 
-# Mix standard and custom processing
-exporter = GmailExporter()
-documents = exporter.export(days_ago=7)
-processed = add_ingestion_timestamp(documents, metadata_field="processed_at")
-custom_processed = custom_email_processor(processed)
+custom_processed = custom_email_processor(documents)
 ai_docs = convert_to_ai_documents(custom_processed, "email_messages")
 
 # Use existing storage methods
 for doc in ai_docs:
     doc.save("email_messages", also_store_vectors=True)
+```
+
+### Pattern 3: Backward Compatibility (Convenience Method)
+```python
+from prefect_data_getters.exporters.gmail_exporter import GmailExporter
+from prefect_data_getters.exporters import add_ingestion_timestamp, convert_to_ai_documents
+
+# Use convenience method for backward compatibility
+exporter = GmailExporter()
+documents = exporter.export_documents(days_ago=7)  # Combines export + process
+processed = add_ingestion_timestamp(documents, metadata_field="processed_at")
+ai_docs = convert_to_ai_documents(processed, "email_messages")
+
+# Use existing storage methods
+for doc in ai_docs:
+    doc.save("email_messages", also_store_vectors=True)
+```
+
+### Pattern 4: Caching and Reprocessing
+```python
+from prefect_data_getters.exporters.slack_exporter import SlackExporter
+
+exporter = SlackExporter()
+
+# Export and cache raw data
+raw_messages = list(exporter.export(channels=['general'], days_ago=7))
+
+# Process with different strategies
+strategy_1_docs = list(exporter.process(iter(raw_messages)))
+strategy_2_docs = list(exporter.process(iter(raw_messages)))  # Different processing
+
+# Raw data can be reused without re-calling APIs
 ```
 
 ## Code Style Guidelines
@@ -299,4 +370,44 @@ class ExporterConfig(BaseSettings):
 - Implement data anonymization where required
 - Secure storage of processed documents
 
-This architecture provides a solid foundation for a maintainable, extensible, and performant data ingestion system while maintaining loose coupling between components.
+## Established Implementation Pattern (2025-06-13)
+
+Based on the successful implementation of Gmail and Slack exporters, the following pattern has been established for all future exporters:
+
+### Enhanced BaseExporter Pattern
+The BaseExporter now requires two abstract methods:
+- `export(**kwargs) -> Iterator[Any]` - Returns raw API data
+- `process(raw_data: Iterator[Any]) -> Iterator[Document]` - Converts raw data to Documents
+- `export_documents(**kwargs) -> Iterator[Document]` - Convenience method combining both
+
+### File Structure Pattern
+```
+src/prefect_data_getters/exporters/
+├── base.py                    # BaseExporter abstract class
+├── {name}_exporter.py         # New exporter implementation
+├── {name}/                    # Existing module (backward compatibility)
+│   └── __init__.py           # Imports from new exporter + deprecation warnings
+└── __init__.py               # Processing functions + exporter imports
+```
+
+### Implementation Benefits
+1. **Clear Separation**: Raw data export vs. document processing
+2. **Public Access**: Both export() and process() methods are public
+3. **Debugging**: Can inspect raw API responses before processing
+4. **Caching**: Can cache raw data and reprocess differently
+5. **Testing**: Easy to mock raw data without API calls
+6. **Flexibility**: Custom processing of raw data before document creation
+7. **Backward Compatibility**: Existing code continues to work
+
+### Implementation Checklist
+For each new exporter:
+- [ ] Create `{name}_exporter.py` with class inheriting from BaseExporter
+- [ ] Implement `export()` method returning `Iterator[Dict[str, Any]]`
+- [ ] Implement `process()` method returning `Iterator[Document]`
+- [ ] Add authentication and error handling
+- [ ] Create comprehensive test suite (20+ tests)
+- [ ] Update backward compatibility in existing modules
+- [ ] Add usage examples and documentation
+- [ ] Verify 100% test pass rate
+
+This enhanced architecture provides a solid foundation for a maintainable, extensible, and performant data ingestion system while maintaining loose coupling between components and enabling advanced use cases through raw data access.
