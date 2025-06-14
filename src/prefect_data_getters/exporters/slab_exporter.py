@@ -17,6 +17,7 @@ from langchain_text_splitters import TextSplitter
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from prefect_data_getters.exporters.base import BaseExporter
+from prefect_data_getters.stores.document_types.slab_document import SlabChunkDocument, SlabDocument
 from prefect_data_getters.utilities import parse_date
 from prefect_data_getters.stores.vectorstore import get_embeddings_and_vectordb
 
@@ -174,20 +175,20 @@ class SlabExporter(BaseExporter):
                             chunk_metadata["chunk_index"] = idx
                             chunk_metadata["parent_document_id"] = processed_metadata["document_id"]
                             
-                            yield Slab(
+                            yield SlabChunkDocument(
                                 id=chunk_id,
                                 page_content=chunk,
                                 metadata=chunk_metadata
                             )
                             idx += 1
-                else:
-                    # Create single document
-                    processed_metadata["type"] = "slab_document"
-                    yield Document(
-                        id=processed_metadata["document_id"],
-                        page_content=content,
-                        metadata=processed_metadata
-                    )
+
+                # Create single document
+                processed_metadata["type"] = "slab_document"
+                yield SlabDocument(
+                    id=processed_metadata["document_id"],
+                    page_content=content,
+                    metadata=processed_metadata
+                )
                     
             except Exception as e:
                 self._log_error(f"Error processing Slab document: {e}")

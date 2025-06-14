@@ -15,8 +15,7 @@ def fetch_jira_issues(days_ago, projects) -> List[dict]:
     return list(jira_docs)
 
 @task
-def process_issues_to_documents(issues: List[dict]) -> List[Document]:
-    documents = []
+def process_issues_to_documents(issues: List[dict]) -> List[JiraDocument]:
     return list(jira_exporter.process(issues))
 
 @task
