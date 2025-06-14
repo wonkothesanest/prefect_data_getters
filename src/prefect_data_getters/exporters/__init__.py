@@ -34,11 +34,35 @@ try:
 except ImportError:
     SlackExporter = None
 
+try:
+    from .jira_exporter import JiraExporter
+except ImportError:
+    JiraExporter = None
+
+try:
+    from .slab_exporter import SlabExporter
+except ImportError:
+    SlabExporter = None
+
+try:
+    from .bitbucket_exporter import BitbucketExporter
+except ImportError:
+    BitbucketExporter = None
+
+try:
+    from .calendar_exporter import CalendarExporter
+except ImportError:
+    CalendarExporter = None
+
 # Export the main classes
 __all__ = [
     'BaseExporter',
     'GmailExporter',
     'SlackExporter',
+    'JiraExporter',
+    'SlabExporter',
+    'BitbucketExporter',
+    'CalendarExporter',
     # Processing functions
     'add_ingestion_timestamp',
     'convert_to_ai_documents',
@@ -134,7 +158,7 @@ def convert_to_ai_documents(
         try:
             # Prepare data dictionary for document creation
             doc_data = {
-                'page_content': doc.page_content,
+                'text': doc.page_content,
                 'metadata': doc.metadata or {},
             }
             

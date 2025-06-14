@@ -2,45 +2,36 @@ from prefect import flow, task
 from langchain.schema import Document
 from typing import List
 from prefect_data_getters.exporters import add_default_metadata
+from prefect_data_getters.stores.document_types.jira_document import JiraDocument
 from prefect_data_getters.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
-from prefect_data_getters.exporters.jira import get_jira_client, format_issue_to_document 
+#from prefect_data_getters.exporters.jira import get_jira_client, format_issue_to_document 
+from prefect_data_getters.exporters import JiraExporter
 
+jira_exporter = JiraExporter()
 @task
-def fetch_jira_issues(jql: str, max_results: int = 100) -> List[dict]:
-    jira = get_jira_client()
-    all_issues = []
-    start_at = 0
-    total = 1  # Initialize to enter the loop
-    while start_at < total:
-        response = jira.jql(jql, start=start_at, limit=max_results)
-        issues = response.get('issues', [])
-        total = response.get('total', 0)
-        all_issues.extend(issues)
-        start_at += max_results
-        print(f"Finished with batch at {start_at} of {total}...")
-    return all_issues
+def fetch_jira_issues(days_ago, projects) -> List[dict]:
+    jira_exporter = JiraExporter()
+    jira_docs = jira_exporter.export(days_ago=days_ago, projects=projects)
+    return list(jira_docs)
 
 @task
 def process_issues_to_documents(issues: List[dict]) -> List[Document]:
     documents = []
-    for issue in issues:
-        doc = format_issue_to_document(issue)
-        documents.append(doc)
-    return add_default_metadata(documents)
+    return list(jira_exporter.process(issues))
 
 @task
-def store_documents_in_vectorstore(documents: List[Document]):
-    embeddings, vectorstore = get_embeddings_and_vectordb("jira_issues")
-    batch_size = 1000  # Adjust based on your needs
-    batch_process_and_store(documents, vectorstore)
+def store_documents_in_vectorstore(documents: List[JiraDocument]):
+    JiraDocument.save_documents(
+        docs=documents,
+        store_name="jira_issues",
+        also_store_vectors=True
+    )
+    
 
 @flow(name="jira-backup-flow", log_prints=True, timeout_seconds=3600)
-def jira_backup_flow():
-    # Define the JQL query
-    jql_query = 'updated >= -180d AND (project = HYP OR project = Ingest OR project = ONBRD OR project = client)'
-
+def jira_backup_flow(days_ago: int = 180):
     # Step 1: Fetch issues from Jira
-    issues = fetch_jira_issues(jql_query)
+    issues = fetch_jira_issues(days_ago, projects=["HYP", "Ingest", "ONBRD", "client"])
 
     # Step 2: Process issues into documents
     documents = process_issues_to_documents(issues)
@@ -52,4 +43,4 @@ def jira_backup_flow():
     store_documents_in_vectorstore(documents)
 
 if __name__ == '__main__':
-    jira_backup_flow()
+    jira_backup_flow(2)

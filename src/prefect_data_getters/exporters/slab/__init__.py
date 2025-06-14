@@ -1,3 +1,20 @@
+"""
+DEPRECATED: Legacy Slab exporter module.
+
+This module is deprecated. Please use the new SlabExporter class:
+
+from prefect_data_getters.exporters.slab_exporter import SlabExporter
+
+# New usage:
+exporter = SlabExporter()
+raw_data = exporter.export(backup_dir)
+documents = exporter.process(raw_data)
+
+# Or use convenience method:
+documents = exporter.export_documents(backup_dir)
+"""
+
+import warnings
 import json
 import os
 from langchain.schema import Document
@@ -8,8 +25,51 @@ from langchain_text_splitters import TextSplitter
 from prefect_data_getters.stores.vectorstore import get_embeddings_and_vectordb
 from prefect_data_getters.utilities import parse_date
 
+# Import the new exporter for backward compatibility
+from prefect_data_getters.exporters.slab_exporter import SlabExporter
 
-def process_slab_docs(backup_dir, split:bool = True) -> list[Document]:
+# Global exporter instance for backward compatibility
+_slab_exporter_instance = None
+
+def get_slab_exporter() -> SlabExporter:
+    """
+    Get a SlabExporter instance for backward compatibility.
+    
+    Returns:
+        SlabExporter: Configured Slab exporter instance
+    """
+    global _slab_exporter_instance
+    if _slab_exporter_instance is None:
+        _slab_exporter_instance = SlabExporter()
+    return _slab_exporter_instance
+
+def process_slab_docs(backup_dir, split: bool = True) -> list[Document]:
+    """
+    DEPRECATED: Process Slab documents using the legacy interface.
+    
+    This function is deprecated. Please use SlabExporter directly:
+    
+    from prefect_data_getters.exporters.slab_exporter import SlabExporter
+    
+    exporter = SlabExporter({"split_documents": split})
+    documents = list(exporter.export_documents(backup_dir))
+    
+    Args:
+        backup_dir: Directory containing Slab backup files
+        split: Whether to split documents into chunks
+        
+    Returns:
+        List of Document objects
+    """
+    warnings.warn(
+        "process_slab_docs is deprecated. Use SlabExporter class instead. "
+        "See: from prefect_data_getters.exporters.slab_exporter import SlabExporter",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    exporter = SlabExporter({"split_documents": split})
+    return list(exporter.export_documents(backup_dir))
     embeddings_model, vectorstore = get_embeddings_and_vectordb("slab_docs")
     if(split):
         semantic_chunker = SemanticChunker(embeddings=embeddings_model,breakpoint_threshold_amount=50, number_of_chunks=10)

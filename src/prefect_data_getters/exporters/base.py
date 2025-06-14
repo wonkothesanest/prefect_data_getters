@@ -160,3 +160,43 @@ class BaseExporter(ABC):
             raise ValueError(
                 f"{self.__class__.__name__} missing required configuration keys: {missing_keys}"
             )
+    
+    def _get_config(self, key: str, default: Any = None) -> Any:
+        """
+        Get a configuration value with optional default.
+        
+        Args:
+            key: Configuration key to retrieve
+            default: Default value if key is not found
+            
+        Returns:
+            Configuration value or default
+        """
+        return self.config.get(key, default)
+    
+    def _log_info(self, message: str) -> None:
+        """
+        Log an info message.
+        
+        Args:
+            message: Message to log
+        """
+        self.logger.info(message)
+    
+    def _log_warning(self, message: str) -> None:
+        """
+        Log a warning message.
+        
+        Args:
+            message: Message to log
+        """
+        self.logger.warning(message)
+    
+    def _log_error(self, message: str) -> None:
+        """
+        Log an error message.
+        
+        Args:
+            message: Message to log
+        """
+        self.logger.error(message)

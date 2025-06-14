@@ -15,8 +15,9 @@ class AIDocument(Document):
     
     # Declare search_score as a proper Pydantic field
     search_score: Optional[float] = Field(default=None, description="Search relevance score")
+    vector: Optional[List[float]] = Field(default=None, description="Embedding vector for semantic search")
     
-    def __init__(self, page_content: str = "", metadata: dict = None, **kwargs):
+    def __init__(self, page_content: str = "", metadata: dict = None, embedding_vector: list[float] = None, **kwargs):
         """
         Initialize AIDocument with direct inheritance from Document.
         
@@ -27,6 +28,7 @@ class AIDocument(Document):
         """
         # Extract search_score if provided in kwargs
         search_score = kwargs.pop('search_score', None)
+
         
         # Initialize the parent Document class
         super().__init__(page_content=page_content, metadata=metadata or {}, **kwargs)
@@ -34,11 +36,14 @@ class AIDocument(Document):
         # Set search_score if provided
         if search_score is not None:
             self.search_score = search_score
+        
+        self.vector = embedding_vector
     
     @property
     def document_type(self) -> str:
         """Return the document type using class name instead of manual _type_name"""
         return self.__class__.__name__
+    
     
     def get_display_id(self) -> str:
         """
@@ -100,8 +105,9 @@ class AIDocument(Document):
         """Convert document to dictionary for storage"""
         return {
             'id': getattr(self, 'id', None),
-            'page_content': self.page_content,
+            'text': self.page_content,
             'metadata': self.metadata,
+            'vector': self.vector,
             'document_type': self.document_type
         }
     
@@ -113,8 +119,9 @@ class AIDocument(Document):
         
         # Create the document with proper parameters
         doc = cls(
-            page_content=data.get('page_content', ''),
+            page_content=data.get('text', ''),
             metadata=data.get('metadata', {}),
+            vector=data.get('vector', None),
             search_score=search_score
         )
         
@@ -123,6 +130,40 @@ class AIDocument(Document):
             doc.id = data['id']
             
         return doc
+    
+    @classmethod
+    def save_documents(cls, docs: List['AIDocument'], store_name: str, also_store_vectors: bool = True) -> bool:
+        """
+        Save multiple documents to Elasticsearch storage.
+        
+        Args:
+            docs: List of AIDocument instances to save
+            store_name: Name of the store/index
+            also_store_vectors: Whether to also store in vector index for semantic search
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Store in Elasticsearch for text search and primary storage
+            from .elasticsearch_manager import ElasticsearchManager
+            es_manager = ElasticsearchManager()
+            
+            # Prepare documents for storage
+            if also_store_vectors:
+                from .vectorstore import get_embeddings
+                emb = get_embeddings()
+                vectors = emb.embed_documents([doc.page_content for doc in docs])
+                for (doc, vector) in zip(docs, vectors):
+                    doc.vector = vector
+            
+            success = es_manager.upsert_documents(docs, store_name)
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Failed to save documents to {store_name}: {e}")
+            return False
     
     def save(self, store_name: str, also_store_vectors: bool = True) -> bool:
         """
@@ -135,35 +176,7 @@ class AIDocument(Document):
         Returns:
             True if successful, False otherwise
         """
-        try:
-            # Store in Elasticsearch for text search and primary storage
-            from .elasticsearch_manager import ElasticsearchManager
-            es_manager = ElasticsearchManager()
-            success = es_manager.save_document(self, store_name)
-            
-            # Optionally store in vector index for semantic search
-            if also_store_vectors and success:
-                try:
-                    from .vectorstore import ESVectorStore
-                    from langchain_core.documents import Document
-                    
-                    vector_store = ESVectorStore(store_name)
-                    base_doc = Document(
-                        page_content=self.page_content,
-                        metadata=self.metadata,
-                        id=self.get_display_id()
-                    )
-                    vector_store.batch_process_and_store([base_doc])
-                    logger.info(f"Stored document {self.get_display_id()} in both text and vector stores")
-                except Exception as e:
-                    logger.warning(f"Vector storage failed for {self.get_display_id()}: {e}")
-                    # Don't fail the whole operation if vector storage fails
-            
-            return success
-            
-        except Exception as e:
-            logger.error(f"Failed to save document {self.get_display_id()}: {e}")
-            return False
+        return AIDocument.save_documents([self], store_name, also_store_vectors)
 
     def delete(self, store_name: str) -> bool:
         """
@@ -219,7 +232,7 @@ class AIDocument(Document):
                     "query": {
                         "multi_match": {
                             "query": query,
-                            "fields": ["page_content^2", "metadata.*"],
+                            "fields": ["text^2", "metadata.*"],
                             "type": "best_fields",
                             "fuzziness": "AUTO"
                         }
@@ -239,7 +252,7 @@ class AIDocument(Document):
                     # Convert to AIDocuments
                     for doc in vector_results:
                         ai_doc = document_class.from_dict({
-                            'page_content': doc.page_content,
+                            'text': doc.page_content,
                             'metadata': doc.metadata or {},
                             'id': doc.metadata.get('id') if doc.metadata else None
                         })

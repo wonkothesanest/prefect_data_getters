@@ -42,7 +42,7 @@ def upsert_documents(docs: List[Dict[str, Any]], index_name: str, id_field: str)
         doc_id = doc.get(id_field)
         
         ai_doc = AIDocument(
-            page_content=doc.get('page_content', ''),
+            page_content=doc.get('text', ''),
             metadata=doc
         )
         
