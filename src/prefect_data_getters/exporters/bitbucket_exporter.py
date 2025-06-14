@@ -12,7 +12,12 @@ from langchain_core.documents import Document
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from prefect_data_getters.exporters.base import BaseExporter
-from prefect_data_getters.exporters.jira import get_bitbucket_client, _iso_to_datetime
+from datetime import datetime
+from atlassian import Bitbucket
+from atlassian.bitbucket import Cloud
+from prefect.blocks.system import Secret
+
+from prefect_data_getters.stores.document_types.bitbucket_document import BitbucketPR
 
 
 class BitbucketExporter(BaseExporter):
@@ -205,8 +210,8 @@ class BitbucketExporter(BaseExporter):
                 destination_branch = pr_data.get('destination', {}).get('branch', {}).get('name', 'Unknown')
                 
                 # Process dates
-                created_dt = _iso_to_datetime(created_on) if created_on else None
-                updated_dt = _iso_to_datetime(updated_on) if updated_on else None
+                created_dt = self._iso_to_datetime(created_on) if created_on else None
+                updated_dt = self._iso_to_datetime(updated_on) if updated_on else None
                 
                 # Process comments
                 comments_text = ""
@@ -273,7 +278,7 @@ class BitbucketExporter(BaseExporter):
                     metadata['updated_on'] = updated_dt.isoformat()
                     metadata['updated_ts'] = updated_dt.timestamp()
                 
-                yield Document(
+                yield BitbucketPR(
                     id=str(pr_id),
                     page_content=page_content,
                     metadata=metadata
@@ -284,7 +289,7 @@ class BitbucketExporter(BaseExporter):
                 continue
     
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-    def _get_bitbucket_client(self):
+    def _get_bitbucket_client(self) -> Cloud:
         """
         Get authenticated Bitbucket client with retry logic.
         
@@ -293,13 +298,63 @@ class BitbucketExporter(BaseExporter):
         """
         if self._bitbucket_client is None:
             try:
-                self._bitbucket_client = get_bitbucket_client()
+                self._bitbucket_client = self._create_bitbucket_client()
                 self._log_info("Successfully authenticated with Bitbucket API")
             except Exception as e:
                 self._log_error(f"Failed to authenticate with Bitbucket: {e}")
                 raise
         
         return self._bitbucket_client
+    
+    def _create_bitbucket_client(self) -> Cloud:
+        """
+        Create authenticated Bitbucket client.
+        
+        Returns:
+            Authenticated Bitbucket client instance
+        """
+        try:
+            # Try to get credentials from config first, then from Prefect Secret
+            if self.config and all(k in self.config for k in ['username', 'password', 'url']):
+                username = self.config['username']
+                password = self.config['password']
+                url = self.config['url']
+            else:
+                # Fallback to Prefect Secret
+                secret_block = Secret.load("prefect-bitbucket-credentials")
+                secret = secret_block.get()
+                username = secret["username"]
+                password = secret["app-password"]
+                url = secret.get("url", "https://api.bitbucket.org")
+            
+            return Cloud(
+                url=url,
+                username=username,
+                password=password
+            )
+            
+        except Exception as e:
+            self._log_error(f"Failed to create Bitbucket client: {e}")
+            raise
+    
+    def _iso_to_datetime(self, iso_string: str) -> datetime:
+        """
+        Convert ISO datetime string to datetime object.
+        
+        Args:
+            iso_string: ISO format datetime string
+            
+        Returns:
+            datetime object
+        """
+        try:
+            # Handle different ISO formats
+            if iso_string.endswith('Z'):
+                iso_string = iso_string[:-1] + '+00:00'
+            return datetime.fromisoformat(iso_string)
+        except ValueError:
+            # Fallback for other formats
+            return datetime.strptime(iso_string, '%Y-%m-%dT%H:%M:%S.%f%z')
     
     def get_repositories(self, project_key: str = None) -> List[Dict[str, str]]:
         """
