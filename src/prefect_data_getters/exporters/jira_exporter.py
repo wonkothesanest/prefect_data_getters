@@ -221,7 +221,7 @@ class JiraExporter(BaseExporter):
         # Flatten metadata using the same field extraction logic as the original
         metadata = {'key': doc_id}
         
-        # Define desired fields to extract
+        # Define desired fields to extract (matches master DESIRED_FIELDS exactly)
         desired_fields = [
             'statuscategorychangedate',
             'priority.name',
@@ -254,14 +254,14 @@ class JiraExporter(BaseExporter):
                     body = self._get_issue_value(comment, 'body')
                     comment_text = f"{author_name}: {body}"
                     if first_comment:
-                        content += "########## Comments ##########\n"
+                        content += "########## Comments ##########"
                         first_comment = False
                     content += comment_text + "\n\n"
             elif field in ["created", "updated"]:
                 value = self._get_issue_value(issue, f'fields.{field}')
                 try:
-                    # Convert to timestamp for easier querying
-                    ts_value = datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp()
+                    # Convert to timestamp for easier querying (matches master logic)
+                    ts_value = datetime.fromisoformat(value).timestamp()
                     metadata[f"{field.replace('.', '_')}_ts"] = ts_value
                     metadata[field.replace('.', '_')] = value
                 except (ValueError, AttributeError):

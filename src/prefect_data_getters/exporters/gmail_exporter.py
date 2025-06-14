@@ -310,6 +310,9 @@ class GmailExporter(BaseExporter):
                 self.logger.error(f"Error fetching message list: {e}")
                 break
         
+        # Get label mapping for adding to headers
+        label_mapping = self._get_label_mapping(service)
+        
         # Fetch full message content
         full_messages = []
         for msg in messages:
@@ -322,6 +325,10 @@ class GmailExporter(BaseExporter):
                 # Add Gmail-specific headers
                 mime_msg.add_header("Google-ID", msg_id)
                 mime_msg.add_header("Google-Thread-ID", msg['threadId'])
+                
+                # Add labels header like master version - get labelIds from original message response
+                labels = [label_mapping.get(label_id, label_id) for label_id in message.get('labelIds', [])]
+                mime_msg.add_header("Labels", ','.join(labels))
                 
                 full_messages.append(mime_msg)
                 
@@ -436,11 +443,11 @@ class GmailExporter(BaseExporter):
         
         return ''
     
-    def apply_labels_to_email(self, email_id: str, 
-                             category_labels: List[str] = [], 
-                             team_labels: List[str] = [],  
-                             project_labels: List[str] = [],  
-                             systems_labels: List[str] = []) -> None:
+    def apply_labels_to_email(self, email_id: str,
+                             category_labels: List[str] = [],
+                             team_labels: List[str] = [],
+                             project_labels: List[str] = [],
+                             sytems_labels: List[str] = []) -> None:
         """
         Apply suggested labels to the processed email.
         
@@ -449,7 +456,7 @@ class GmailExporter(BaseExporter):
             category_labels: List of category labels to apply
             team_labels: List of team labels to apply
             project_labels: List of project labels to apply
-            systems_labels: List of system labels to apply
+            sytems_labels: List of system labels to apply (note: typo preserved for backward compatibility)
         """
         try:
             service = self._get_gmail_service()
@@ -457,37 +464,29 @@ class GmailExporter(BaseExporter):
             existing_labels_to_apply = []
             
             all_label_groups = {
-                "Cats": category_labels, 
-                "Teams": team_labels, 
-                "Projects": project_labels, 
-                "Systems": systems_labels
+                "Cats": category_labels,
+                "Teams": team_labels,
+                "Projects": project_labels,
+                "Systems": sytems_labels
             }
             
             existing_labels = self._get_label_mapping(service)
             
             for label_type, label_list in all_label_groups.items():
-                # Smoosh similar labels together
+                # Smoosh similar labels together like master version
                 smooshed_labels = self._smoosh_labels_together(
                     label_list, label_type, existing_labels
                 )
                 
-                for label in smooshed_labels:
+                for label in label_list:  # Use original label_list, not smooshed (matches master)
                     label_name = f'AI/{label_type}/{label}'
                     
-                    # Check if label exists
-                    existing_label_id = None
-                    for label_id, name in existing_labels.items():
-                        if name == label_name:
-                            existing_label_id = label_id
-                            break
-                    
-                    if existing_label_id:
-                        existing_labels_to_apply.append(existing_label_id)
-                    else:
-                        # Create new label
+                    # Check if label exists (matches master logic)
+                    if not any(value.endswith(f"/{label_type}/{label}") for value in existing_labels.values()):
+                        # Create new label if it doesn't exist
                         try:
                             new_label = service.users().labels().create(
-                                userId='me', 
+                                userId='me',
                                 body={'name': label_name}
                             ).execute()
                             created_labels.append(new_label['id'])
@@ -496,6 +495,12 @@ class GmailExporter(BaseExporter):
                         except Exception as e:
                             self.logger.error(f"Error creating label '{label_name}': {e}")
                             continue
+                    else:
+                        # Find existing label ID
+                        for key, value in existing_labels.items():
+                            if value.endswith(f"{label_type}/{label}"):
+                                existing_labels_to_apply.append(key)
+                                break
             
             # Apply labels to the email
             label_ids = existing_labels_to_apply + created_labels

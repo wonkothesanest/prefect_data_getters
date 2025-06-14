@@ -1,18 +1,11 @@
 from prefect import flow, task
 from langchain.schema import Document
 from typing import List
-
 import prefect
 from prefect_data_getters.enrichers.gmail_email_processing_flow import process_emails_by_google_ids, utilize_analysis_flow
 from prefect_data_getters.stores.document_types.email_document import EmailDocument
 from prefect_data_getters.exporters.gmail_exporter import GmailExporter
-from prefect_data_getters.stores.elasticsearch_compatibility import upsert_documents
-from prefect_data_getters.utilities import constants as C
 from prefect.artifacts import create_markdown_artifact
-from prefect_data_getters.utilities import parse_date
-from elasticsearch import Elasticsearch
-
-es_client = Elasticsearch(C.ES_URL)
 
 @task
 def fetch_gmail_messages(days_ago: int) -> List[dict]:
@@ -47,25 +40,8 @@ def gmail_mbox_backup_flow(days_ago: int = 1):
     # Step 2: Process messages into Document objects
     documents = process_messages_to_documents(raw_messages)
 
-    # Store raw emails for backward compatibility
-    ret_emails = []
-    gmail_exporter = GmailExporter()
-    for message in raw_messages:
-        try:
-            d = {}
-            d["text"] = gmail_exporter._extract_email_body(message)
-
-            for k in message.keys():
-                d[k.lower()] = message[k]
-            d["labels"] = d["labels"].split(",") if d["labels"] else []
-            d["date"] = parse_date(d["date"])
-            ret_emails.append(d)
-        except Exception as e:
-            print(f"Error processing message: {e}")
-            continue
-
-    upsert_documents(ret_emails, "email_messages_raw", "google-id")
-    email_ids = [e["google-id"] for e in ret_emails]
+    # Extract email IDs for return value (for backward compatibility)
+    email_ids = [msg.get("google-id", msg.get("id", "")) for msg in raw_messages]
 
     if not raw_messages:
         print(f"No messages found from the past {days_ago} days.")
