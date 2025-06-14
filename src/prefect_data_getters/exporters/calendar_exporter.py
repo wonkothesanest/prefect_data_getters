@@ -17,7 +17,7 @@ from googleapiclient.discovery import build
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from prefect_data_getters.exporters.base import BaseExporter
-from prefect_data_getters.exporters.jira import _iso_to_datetime
+from datetime import datetime
 
 
 class CalendarExporter(BaseExporter):
@@ -162,10 +162,10 @@ class CalendarExporter(BaseExporter):
                 start_dt = None
                 end_dt = None
                 if start_time:
-                    start_dt = _iso_to_datetime(start_time)
+                    start_dt = self._iso_to_datetime(start_time)
                     start_time = start_dt.isoformat()
                 if end_time:
-                    end_dt = _iso_to_datetime(end_time)
+                    end_dt = self._iso_to_datetime(end_time)
                     end_time = end_dt.isoformat()
                 
                 # Process organizer
@@ -367,3 +367,26 @@ class CalendarExporter(BaseExporter):
         except Exception as e:
             self._log_error(f"Error counting events: {e}")
             return 0
+    
+    def _iso_to_datetime(self, iso_string: str) -> datetime:
+        """
+        Convert ISO datetime string to datetime object.
+        
+        Args:
+            iso_string: ISO format datetime string
+            
+        Returns:
+            datetime object
+        """
+        try:
+            # Handle different ISO formats
+            if iso_string.endswith('Z'):
+                iso_string = iso_string[:-1] + '+00:00'
+            return datetime.fromisoformat(iso_string)
+        except ValueError:
+            # Fallback for other formats
+            try:
+                return datetime.strptime(iso_string, '%Y-%m-%dT%H:%M:%S.%f%z')
+            except ValueError:
+                # Try without microseconds
+                return datetime.strptime(iso_string, '%Y-%m-%dT%H:%M:%S%z')

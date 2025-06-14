@@ -211,6 +211,36 @@ def get_labels():
     return exporter.get_labels()
 
 
+def parse_date(date_string):
+    """
+    Parse date string from email headers.
+    
+    Args:
+        date_string: Date string from email header
+        
+    Returns:
+        Parsed datetime object or original string if parsing fails
+        
+    Note:
+        This function is deprecated. Use utilities.parse_date() instead.
+    """
+    warnings.warn(
+        "parse_date() is deprecated. Use utilities.parse_date() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    try:
+        from prefect_data_getters.utilities import parse_date as util_parse_date
+        return util_parse_date(date_string)
+    except ImportError:
+        # Fallback implementation
+        from email.utils import parsedate_to_datetime
+        try:
+            return parsedate_to_datetime(date_string)
+        except (ValueError, TypeError):
+            return date_string
+
+
 # Import and re-export the main class
 def __getattr__(name):
     """Dynamic import to avoid circular imports."""
@@ -225,11 +255,12 @@ __all__ = [
     'GmailExporter',
     # Backward compatibility functions
     'authenticate_gmail',
-    'get_messages_by_query', 
+    'get_messages_by_query',
     'get_messages',
     'get_email_body',
     'get_metadata',
     'process_message',
     'apply_labels_to_email',
-    'get_labels'
+    'get_labels',
+    'parse_date'
 ]

@@ -49,6 +49,7 @@ class SlackExporter(BaseExporter):
         Args:
             config: Configuration dictionary containing:
                 - token: Slack API token (required)
+                - cookie: Slack session cookie for enhanced authentication (optional)
                 - page_size: Number of messages to fetch per API call (default: 1000)
                 - rate_limit_delay: Delay between API calls in seconds (default: 1.3)
                 - max_retries: Maximum number of retries for rate-limited requests (default: 3)
@@ -62,6 +63,7 @@ class SlackExporter(BaseExporter):
         self.config.setdefault("page_size", 1000)
         self.config.setdefault("rate_limit_delay", 1.3)
         self.config.setdefault("max_retries", 3)
+        self.config.setdefault("cookie", None)
         
         # Initialize cached instances
         self._slack_client = None
@@ -97,7 +99,7 @@ class SlackExporter(BaseExporter):
             
             # Get channels to process
             channels_to_process = self._get_channels_to_process(
-                slack_client, channels, channel_mapping
+                slack_client, channels, channel_mapping, oldest_timestamp
             )
             
             # Process each channel and yield raw messages
@@ -169,7 +171,15 @@ class SlackExporter(BaseExporter):
         """
         if self._slack_client is None:
             try:
-                self._slack_client = Slacker(self.config['token'])
+                # Build headers with cookie support for enhanced authentication
+                headers = {}
+                if self.config.get('cookie'):
+                    headers['cookie'] = self.config['cookie']
+                
+                self._slack_client = Slacker(
+                    token=self.config['token'],
+                    headers=headers if headers else None
+                )
                 # Test authentication
                 self._test_authentication(self._slack_client)
             except Exception as e:
@@ -300,15 +310,16 @@ class SlackExporter(BaseExporter):
         
         return self._channel_mapping
     
-    def _get_channels_to_process(self, slack_client, channel_names: List[str] = None, 
-                                channel_mapping: Dict[str, str] = None) -> List[Dict]:
+    def _get_channels_to_process(self, slack_client, channel_names: List[str] = None,
+                                channel_mapping: Dict[str, str] = None, oldest_timestamp: float = None) -> List[Dict]:
         """
-        Get the list of channels to process.
+        Get the list of channels to process with sophisticated filtering logic.
         
         Args:
             slack_client: Slacker client instance
             channel_names: List of specific channel names to process
             channel_mapping: Channel ID to name mapping
+            oldest_timestamp: Oldest timestamp for filtering stale group chats
             
         Returns:
             List of channel dictionaries
@@ -326,7 +337,7 @@ class SlackExporter(BaseExporter):
                 cursor = channels_list['response_metadata']['next_cursor']
                 sleep(self.config['rate_limit_delay'])
                 channels_list = slack_client.conversations.list(
-                    limit=200, types=('public_channel', 'private_channel', 'mpim'), 
+                    limit=200, types=('public_channel', 'private_channel', 'mpim'),
                     cursor=cursor
                 ).body
                 all_channels.extend(channels_list['channels'])
@@ -334,16 +345,46 @@ class SlackExporter(BaseExporter):
             # Filter channels if specific names provided
             if channel_names:
                 filtered_channels = [
-                    channel for channel in all_channels 
+                    channel for channel in all_channels
                     if channel['name'] in channel_names
                 ]
                 return filtered_channels
             else:
-                # Filter to only member channels and exclude archived
-                return [
-                    channel for channel in all_channels 
-                    if channel.get('is_member', False) and not channel.get('is_archived', False)
-                ]
+                # Apply sophisticated filtering logic from original implementation
+                filtered_channels = []
+                
+                for channel in all_channels:
+                    # Skip archived channels
+                    if channel.get('is_archived', False):
+                        continue
+                    
+                    # Must be a member of the channel
+                    if not channel.get('is_member', False):
+                        continue
+                    
+                    # For group DMs (mpim), apply special filtering logic
+                    if channel.get('is_mpim', False):
+                        # Always include small group DMs (3 or fewer members)
+                        if channel.get('num_members', 0) <= 3:
+                            filtered_channels.append(channel)
+                        # For larger group DMs, only include if recently updated
+                        elif channel.get('num_members', 0) > 3 and oldest_timestamp:
+                            # 31-day cutoff for stale large group chats
+                            cutoff_timestamp = oldest_timestamp * 1000 - timedelta(days=31).total_seconds() * 1000
+                            if channel.get('updated', 0) > cutoff_timestamp:
+                                filtered_channels.append(channel)
+                            else:
+                                self.logger.debug(f"Skipping stale large group DM: {channel.get('name', 'unknown')} "
+                                                f"with {channel.get('num_members', 0)} members")
+                        else:
+                            # Include large group DMs if no timestamp filtering
+                            filtered_channels.append(channel)
+                    else:
+                        # Include all other member channels (public and private)
+                        filtered_channels.append(channel)
+                
+                self.logger.info(f"Filtered to {len(filtered_channels)} channels from {len(all_channels)} total")
+                return filtered_channels
                 
         except Exception as e:
             self.logger.error(f"Error getting channels to process: {e}")
@@ -365,6 +406,7 @@ class SlackExporter(BaseExporter):
         """
         messages = []
         last_timestamp = None
+        last_timestamp_from_previous_iteration = last_timestamp
         page_size = self.config['page_size']
         
         try:
@@ -416,9 +458,24 @@ class SlackExporter(BaseExporter):
                     messages = messages[:limit]
                     break
                 
-                # Update timestamp for next page
+                # Update timestamp for next page with infinite loop protection
                 if messages:
                     last_timestamp = messages[-1]['ts']
+                    
+                    # Infinite loop protection from original implementation
+                    if last_timestamp == last_timestamp_from_previous_iteration:
+                        # Find the minimum timestamp to avoid infinite loops
+                        min_timestamp = float(last_timestamp)
+                        for m in messages:
+                            if min_timestamp > float(m['ts']):
+                                min_timestamp = float(m['ts'])
+                        
+                        if min_timestamp == float(last_timestamp):
+                            self.logger.warning(f"Warning: lastTimestamp is not changing. Potential infinite loop detected in channel {channel_id}")
+                            break
+                        last_timestamp = str(min_timestamp)
+                    
+                    last_timestamp_from_previous_iteration = last_timestamp
                 
                 # Rate limiting
                 sleep(self.config['rate_limit_delay'])
@@ -446,6 +503,7 @@ class SlackExporter(BaseExporter):
         """
         replies = []
         last_timestamp = None
+        last_timestamp_from_previous_iteration = last_timestamp
         
         try:
             while True:
@@ -483,6 +541,21 @@ class SlackExporter(BaseExporter):
                 
                 if replies:
                     last_timestamp = replies[-1]['ts']
+                    
+                    # Infinite loop protection from original implementation
+                    if last_timestamp == last_timestamp_from_previous_iteration:
+                        # Find the minimum timestamp to avoid infinite loops
+                        min_timestamp = float(last_timestamp)
+                        for m in replies:
+                            if min_timestamp > float(m['ts']):
+                                min_timestamp = float(m['ts'])
+                        
+                        if min_timestamp == float(last_timestamp):
+                            self.logger.warning(f"Warning: lastTimestamp is not changing in thread replies for {thread_ts}. Potential infinite loop detected.")
+                            break
+                        last_timestamp = str(min_timestamp)
+                    
+                    last_timestamp_from_previous_iteration = last_timestamp
                 
                 sleep(self.config['rate_limit_delay'])
                 

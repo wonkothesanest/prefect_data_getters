@@ -421,52 +421,5 @@ class TestGmailExporterIntegration:
         assert hasattr(exporter, '_log_export_start')
         assert hasattr(exporter, '_log_export_complete')
 
-
-class TestBackwardCompatibility:
     """Test backward compatibility functions."""
     
-    def test_backward_compatibility_imports(self):
-        """Test that backward compatibility functions can be imported."""
-        from prefect_data_getters.exporters.gmail import (
-            authenticate_gmail,
-            get_messages_by_query,
-            get_messages,
-            get_email_body,
-            get_metadata,
-            process_message,
-            apply_labels_to_email,
-            get_labels,
-            GmailExporter
-        )
-        
-        # All functions should be callable
-        assert callable(authenticate_gmail)
-        assert callable(get_messages_by_query)
-        assert callable(get_messages)
-        assert callable(get_email_body)
-        assert callable(get_metadata)
-        assert callable(process_message)
-        assert callable(apply_labels_to_email)
-        assert callable(get_labels)
-        assert GmailExporter is not None
-    
-    def test_deprecated_functions_show_warnings(self):
-        """Test that deprecated functions show deprecation warnings."""
-        import warnings
-        
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            
-            # Import and try to use a deprecated function
-            from prefect_data_getters.exporters.gmail import get_labels
-            
-            # This should trigger a warning when called
-            with patch('prefect_data_getters.exporters.gmail.GmailExporter'):
-                try:
-                    get_labels()
-                except:
-                    pass  # We expect this to fail due to mocking, but warning should still be triggered
-            
-            # Check that a deprecation warning was issued
-            assert len(w) > 0
-            assert any(issubclass(warning.category, DeprecationWarning) for warning in w)

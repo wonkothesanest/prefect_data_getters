@@ -4,61 +4,59 @@ from typing import List
 
 import prefect
 from prefect_data_getters.enrichers.gmail_email_processing_flow import process_emails_by_google_ids, utilize_analysis_flow
-from prefect_data_getters.exporters.gmail import process_message
-from prefect_data_getters.stores.elasticsearch import upsert_documents
-from prefect_data_getters.utilities import constants as C  
-from prefect_data_getters.stores.vectorstore import batch_process_and_store, get_embeddings_and_vectordb
+from prefect_data_getters.stores.document_types.email_document import EmailDocument
+from prefect_data_getters.exporters.gmail_exporter import GmailExporter
+from prefect_data_getters.stores.elasticsearch_compatibility import upsert_documents
+from prefect_data_getters.utilities import constants as C
 from prefect.artifacts import create_markdown_artifact
-
-from prefect_data_getters.exporters.gmail import parse_date
-from prefect_data_getters.exporters.gmail import get_email_body
-
-import os
-from prefect import flow
-from prefect_data_getters.exporters.gmail import get_messages, process_message
+from prefect_data_getters.utilities import parse_date
 from elasticsearch import Elasticsearch
 
 es_client = Elasticsearch(C.ES_URL)
 
 @task
-def retrieve_messages(days_ago: int):
-    messages = get_messages(days_ago)
-    return messages
+def fetch_gmail_messages(days_ago: int) -> List[dict]:
+    """Fetch raw Gmail message data."""
+    gmail_exporter = GmailExporter()
+    gmail_docs = gmail_exporter.export(days_ago=days_ago)
+    return list(gmail_docs)
 
-@task 
-def process_messages(messages: list):
-    # Process each message
-    documents = []
-    for message in messages:
-        try:
-            documents.append(process_message(message))
-        except Exception as e:
-            print(f"Error processing message: {e}")
-            continue
+@task
+def process_messages_to_documents(raw_messages: List[dict]) -> List[Document]:
+    """Process raw Gmail data into Document objects."""
+    gmail_exporter = GmailExporter()
+    documents = list(gmail_exporter.process(iter(raw_messages)))
     return documents
 
 @task
 def store_documents_in_vectorstore(documents: List[Document]):
-    embeddings, vectorstore = get_embeddings_and_vectordb("email_messages")
-    batch_size = 1000  # Adjust based on your needs
-    batch_process_and_store(documents, vectorstore)
-
+    """Store Gmail documents in vector store."""
+    if documents:
+        EmailDocument.save_documents(
+            docs=documents,
+            store_name="email_messages",
+            also_store_vectors=True
+        )
 
 @flow(name="gmail-mbox-backup-flow", log_prints=True, timeout_seconds=3600)
-def gmail_mbox_backup_flow(days_ago: int=1):
-    # Get messages from the past given number of days
-    messages = retrieve_messages(days_ago)
-    create_markdown_artifact(f"Number of messages found: {len(messages)} when pulling for {days_ago} days.")
-    # Store raw
+def gmail_mbox_backup_flow(days_ago: int = 1):
+    # Step 1: Fetch raw Gmail messages
+    raw_messages = fetch_gmail_messages(days_ago)
+    create_markdown_artifact(f"Number of messages found: {len(raw_messages)} when pulling for {days_ago} days.")
+    
+    # Step 2: Process messages into Document objects
+    documents = process_messages_to_documents(raw_messages)
 
+    # Store raw emails for backward compatibility
     ret_emails = []
-    for e in messages:
+    gmail_exporter = GmailExporter()
+    for message in raw_messages:
         try:
             d = {}
-            d["text"] = get_email_body(e)
+            d["text"] = gmail_exporter._extract_email_body(message)
 
-            for k in e.keys():
-                d[k.lower()] = e[k]
+            for k in message.keys():
+                d[k.lower()] = message[k]
             d["labels"] = d["labels"].split(",") if d["labels"] else []
             d["date"] = parse_date(d["date"])
             ret_emails.append(d)
@@ -69,19 +67,15 @@ def gmail_mbox_backup_flow(days_ago: int=1):
     upsert_documents(ret_emails, "email_messages_raw", "google-id")
     email_ids = [e["google-id"] for e in ret_emails]
 
-    
-    if not messages:
+    if not raw_messages:
         print(f"No messages found from the past {days_ago} days.")
-        return
+        return email_ids
     
-    print(f"Retrieved {len(messages)} messages. Processing...")
-    documents = process_messages(messages)
-    i=1
+    print(f"Retrieved {len(raw_messages)} messages. Processing...")
+    
+    # Step 3: Store documents in vector store
     store_documents_in_vectorstore(documents)
     return email_ids
-
-    
-
 
 @flow(name="Gmail Flow", log_prints=True, timeout_seconds=3600*3)
 def gmail_flow(days_ago: int = 3):
