@@ -447,7 +447,7 @@ class GmailExporter(BaseExporter):
                              category_labels: List[str] = [],
                              team_labels: List[str] = [],
                              project_labels: List[str] = [],
-                             sytems_labels: List[str] = []) -> None:
+                             systems_labels: List[str] = []) -> None:
         """
         Apply suggested labels to the processed email.
         
@@ -467,7 +467,7 @@ class GmailExporter(BaseExporter):
                 "Cats": category_labels,
                 "Teams": team_labels,
                 "Projects": project_labels,
-                "Systems": sytems_labels
+                "Systems": systems_labels
             }
             
             existing_labels = self._get_label_mapping(service)

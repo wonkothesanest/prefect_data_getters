@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from langchain.schema import Document
 from typing import List
 from prefect_data_getters.exporters.calendar_exporter import CalendarExporter
-from prefect_data_getters.stores.document_types.email_document import EmailDocument  # Using EmailDocument as fallback since no CalendarDocument exists
+from prefect_data_getters.stores.documents_new import AIDocument  # Using EmailDocument as fallback since no CalendarDocument exists
 
 @task
 def fetch_google_calendar_events(days_ago: int = 7, days_ahead: int = 30) -> List[dict]:
@@ -26,7 +26,7 @@ def store_documents_in_vectorstore(documents: List[Document]):
     if documents:
         # Note: Using EmailDocument as fallback since no specific CalendarDocument exists
         # This could be improved by creating a dedicated CalendarDocument class
-        EmailDocument.save_documents(
+        AIDocument.save_documents(
             docs=documents,
             store_name="google_calendar_events",
             also_store_vectors=True
@@ -53,4 +53,4 @@ def google_calendar_backup_flow(days_ago: int = 7, days_ahead: int = 30):
 
 if __name__ == '__main__':
     # Run the flow for 6 days of events; adjust the parameter as needed.
-    google_calendar_backup_flow(days=3)
+    google_calendar_backup_flow(days_ago=10, days_ahead=2)

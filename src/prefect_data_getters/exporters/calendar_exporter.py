@@ -129,7 +129,7 @@ class CalendarExporter(BaseExporter):
         
         self._log_info(f"Exported {events_count} calendar events")
     
-    def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[Document]:
+    def process(self, raw_data: Iterator[Dict[str, Any]]) -> Iterator[CalendarDocument]:
         """
         Process raw Google Calendar data into Document objects.
         
