@@ -17,6 +17,7 @@ from googleapiclient.discovery import build
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from prefect_data_getters.exporters.base import BaseExporter
+from prefect_data_getters.stores.document_types.calendar_document import CalendarDocument
 from datetime import datetime
 
 
@@ -237,7 +238,7 @@ class CalendarExporter(BaseExporter):
                 if creator_info:
                     metadata["creator"] = creator_info.get("displayName", creator_info.get("email", ""))
                 
-                yield Document(
+                yield CalendarDocument(
                     id=event_id,
                     page_content=page_content,
                     metadata=metadata

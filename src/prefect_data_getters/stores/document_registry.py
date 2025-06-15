@@ -119,8 +119,7 @@ class DocumentTypeRegistry:
         
         try:
             # Import all document type modules to trigger auto-registration
-            # These imports will be added as document types are migrated
-            pass
+            from .document_types.calendar_document import CalendarDocument
             # from .document_types.jira_document import JiraDocument
             # from .document_types.email_document import EmailDocument
             # from .document_types.slack_document import SlackMessageDocument

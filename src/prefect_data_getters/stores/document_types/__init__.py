@@ -11,12 +11,14 @@ from prefect_data_getters.stores.document_types.email_document import EmailDocum
 from prefect_data_getters.stores.document_types.slack_document import SlackMessageDocument
 from prefect_data_getters.stores.document_types.slab_document import SlabDocument, SlabChunkDocument
 from prefect_data_getters.stores.document_types.bitbucket_document import BitbucketPR
+from prefect_data_getters.stores.document_types.calendar_document import CalendarDocument
 
 __all__ = [
     'JiraDocument',
-    'EmailDocument', 
+    'EmailDocument',
     'SlackMessageDocument',
     'SlabDocument',
     'SlabChunkDocument',
-    'BitbucketPR'
+    'BitbucketPR',
+    'CalendarDocument'
 ]
